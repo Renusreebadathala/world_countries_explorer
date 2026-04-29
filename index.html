@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 World Countries Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky: #0d1b3e;
+  --sky2: #162040;
+  --ocean: #0a3d62;
+  --land: #1e4d2b;
+  --sand: #c8a96e;
+  --gold: #f0c040;
+  --coral: #e07a5f;
+  --mint: #81b29a;
+  --cloud: #e8e8ee;
+  --mist: #b0b8d0;
+  --card-bg: rgba(15,25,55,0.85);
+  --card-border: rgba(200,169,110,0.25);
+  --surface: rgba(20,35,70,0.9);
+  --text: #e8eaf0;
+  --muted: #8090b0;
+  --accent: #f0c040;
+  --accent2: #81b29a;
+  --tag-bg: rgba(240,192,64,0.1);
+  --visa-free: #2ecc71;
+  --visa-on-arrival: #f39c12;
+  --visa-required: #e74c3c;
+  --evisa: #3498db;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  font-family:'Outfit',sans-serif;
+  background: var(--sky);
+  color: var(--text);
+  min-height:100vh;
+  overflow-x: hidden;
+}
+
+/* Animated globe/map background */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(10,61,98,0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(30,77,43,0.4) 0%, transparent 40%),
+    radial-gradient(ellipse at 60% 80%, rgba(200,169,110,0.15) 0%, transparent 35%),
+    linear-gradient(160deg, #0d1b3e 0%, #0a1628 40%, #0d2040 70%, #0a1830 100%);
+  pointer-events:none;
+}
+
+/* Floating compass dots */
+body::after {
+  content:'';
+  position:fixed; inset:0; z-index:0;
+  background-image:
+    radial-gradient(circle, rgba(240,192,64,0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+}
+
+/* ========== HEADER ========== */
+header {
+  position:relative; z-index:10;
+  padding: 60px 20px 50px;
+  text-align:center;
+  border-bottom: 1px solid var(--card-border);
+  background: linear-gradient(180deg, rgba(10,15,35,0.9) 0%, rgba(13,27,62,0.6) 100%);
+  backdrop-filter: blur(8px);
+  overflow:hidden;
+}
+header::before {
+  content:'';
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(240,192,64,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 100%, rgba(129,178,154,0.1) 0%, transparent 40%);
+  pointer-events:none;
+}
+.header-globe {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display:inline-block;
+  animation: spin 20s linear infinite;
+  filter: drop-shadow(0 0 20px rgba(240,192,64,0.4));
+}
+@keyframes spin { from{transform:rotateY(0deg)} to{transform:rotateY(360deg)} }
+header h1 {
+  font-family:'Cormorant Garamond',serif;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight:700;
+  background: linear-gradient(135deg, var(--sand) 0%, var(--gold) 40%, #fff8e0 60%, var(--mint) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip:text;
+  letter-spacing: -0.01em;
+  margin-bottom:10px;
+}
+header p {
+  color: var(--mist);
+  font-size:1rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  margin-bottom:30px;
+}
+.header-stats {
+  display:inline-flex; gap:0; flex-wrap:wrap; justify-content:center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--card-border);
+  border-radius: 60px;
+  overflow:hidden;
+}
+.stat-item {
+  padding: 10px 24px;
+  border-right: 1px solid var(--card-border);
+  font-size:0.82rem;
+  color: var(--muted);
+  letter-spacing:0.05em;
+}
+.stat-item:last-child { border-right:none; }
+.stat-item strong { color: var(--gold); font-weight:600; }
+
+/* ========== TABS ========== */
+.main-tabs {
+  position: sticky; top:0; z-index:100;
+  background: rgba(10,15,35,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--card-border);
+  display:flex; flex-wrap:wrap; gap:0;
+  justify-content:center;
+  padding: 0 20px;
+}
+.tab-btn {
+  background:none; border:none; border-bottom: 3px solid transparent;
+  color: var(--muted); font-family:'Outfit',sans-serif; font-size:0.9rem;
+  padding: 16px 24px; cursor:pointer; transition: all 0.2s;
+  letter-spacing:0.04em;
+}
+.tab-btn:hover { color: var(--gold); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ========== CONTROLS ========== */
+.controls {
+  background: rgba(10,15,35,0.95);
+  backdrop-filter: blur(12px);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--card-border);
+  display:flex; flex-wrap:wrap; gap:10px;
+  align-items:center; justify-content:center;
+  position:sticky; top:56px; z-index:90;
+}
+.search-wrap { position:relative; flex:1; min-width:220px; max-width:380px; }
+.search-wrap input {
+  width:100%; background: rgba(255,255,255,0.06);
+  border: 1px solid var(--card-border);
+  color: var(--text); padding:10px 16px 10px 38px;
+  border-radius: 8px; font-family:'Outfit',sans-serif;
+  font-size:0.9rem; outline:none; transition: border-color 0.2s;
+}
+.search-wrap input:focus { border-color: var(--gold); }
+.search-wrap input::placeholder { color: var(--muted); }
+.search-icon {
+  position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  color: var(--muted); font-size:0.9rem;
+}
+.region-filters { display:flex; flex-wrap:wrap; gap:6px; }
+.filter-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--card-border);
+  color: var(--muted); padding: 7px 14px;
+  border-radius: 20px; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:0.8rem;
+  transition: all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: linear-gradient(135deg, var(--sand), var(--gold));
+  border-color: var(--gold); color: #0a1628; font-weight:600;
+}
+
+.count-bar {
+  text-align:center; padding:12px;
+  color: var(--muted); font-size:0.82rem;
+  border-bottom: 1px solid var(--card-border);
+  position:relative; z-index:5;
+  background: rgba(10,15,35,0.5);
+}
+.count-bar span { color: var(--gold); font-weight:600; }
+
+/* ========== GRID ========== */
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap:20px; padding:24px;
+  max-width:1700px; margin:0 auto;
+  position:relative; z-index:5;
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius:16px; overflow:hidden;
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+  cursor:pointer; animation: fadeUp 0.5s ease both;
+  backdrop-filter: blur(10px);
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+.card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(240,192,64,0.5);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 30px rgba(240,192,64,0.08);
+}
+
+/* Card Header with flag image */
+.card-header {
+  position:relative; overflow:hidden;
+  background: linear-gradient(135deg, rgba(240,192,64,0.08) 0%, rgba(129,178,154,0.06) 100%);
+  border-bottom: 1px solid var(--card-border);
+}
+.flag-banner {
+  width:100%; height:90px; object-fit:cover; display:block;
+  opacity:0.35; transition: opacity 0.3s;
+}
+.card:hover .flag-banner { opacity:0.5; }
+.card-header-content {
+  position:absolute; inset:0;
+  display:flex; align-items:center; gap:14px;
+  padding: 14px 18px;
+}
+.flag-emoji { font-size:2.8rem; line-height:1; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
+.flag-img-small {
+  width:50px; height:34px; object-fit:cover;
+  border-radius:4px; border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.country-title { flex:1; }
+.country-title h2 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.35rem; font-weight:700;
+  color: #fff; margin-bottom:4px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+.region-tag {
+  font-size:0.7rem;
+  background: rgba(240,192,64,0.15);
+  border: 1px solid rgba(240,192,64,0.3);
+  color: var(--gold); padding: 2px 8px;
+  border-radius:10px; letter-spacing:0.06em;
+}
+.coord-badge {
+  font-size:0.68rem; color: var(--mist); margin-top:4px;
+  font-family:'Courier New',monospace; opacity:0.8;
+}
+
+/* Card Sections */
+.card-section {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.section-label {
+  font-size:0.68rem; text-transform:uppercase; letter-spacing:0.12em;
+  color: var(--gold); font-weight:600; margin-bottom:8px;
+  display:flex; align-items:center; gap:6px;
+}
+.section-label::after {
+  content:''; flex:1; height:1px;
+  background: linear-gradient(to right, rgba(240,192,64,0.3), transparent);
+}
+
+/* Description */
+.description-text {
+  font-size:0.85rem; color: var(--mist); line-height:1.65;
+  font-style:italic;
+}
+
+/* Currency block */
+.currency-block {
+  display:flex; align-items:center; gap:12px;
+  background: rgba(240,192,64,0.07);
+  border: 1px solid rgba(240,192,64,0.15);
+  border-radius:10px; padding:10px 14px;
+}
+.currency-icon { font-size:1.6rem; }
+.currency-info .currency-name { font-size:0.95rem; font-weight:600; color: var(--gold); }
+.currency-info .currency-code { font-size:0.75rem; color: var(--muted); }
+.currency-info .currency-usd { font-size:0.78rem; color: var(--mint); margin-top:2px; }
+
+/* Lat/Long */
+.coords-row {
+  display:flex; gap:16px;
+}
+.coord-item {
+  flex:1; background: rgba(129,178,154,0.08);
+  border: 1px solid rgba(129,178,154,0.2);
+  border-radius:8px; padding:8px 12px; text-align:center;
+}
+.coord-item .coord-val {
+  font-family:'Courier New',monospace; font-size:1rem;
+  font-weight:600; color: var(--mint);
+}
+.coord-item .coord-lbl { font-size:0.7rem; color: var(--muted); margin-top:2px; }
+
+/* Food list */
+.food-pills { display:flex; flex-wrap:wrap; gap:6px; }
+.food-pill {
+  background: rgba(224,122,95,0.1);
+  border: 1px solid rgba(224,122,95,0.25);
+  color: #f0a090; padding:3px 10px;
+  border-radius:12px; font-size:0.76rem;
+}
+
+/* Info rows */
+.info-row {
+  display:flex; gap:8px; align-items:flex-start;
+  margin-bottom:8px; font-size:0.85rem;
+}
+.info-row:last-child { margin-bottom:0; }
+.info-label {
+  color: var(--muted); min-width:72px;
+  font-size:0.72rem; text-transform:uppercase;
+  letter-spacing:0.06em; padding-top:2px; flex-shrink:0;
+}
+.info-value { color: var(--cloud); line-height:1.5; }
+
+/* Tags */
+.card-footer {
+  padding:12px 18px;
+  display:flex; gap:6px; flex-wrap:wrap;
+}
+.tag {
+  background: var(--tag-bg);
+  border: 1px solid rgba(240,192,64,0.2);
+  color: var(--sand); padding:3px 10px;
+  border-radius:12px; font-size:0.72rem;
+}
+
+.hidden { display:none !important; }
+
+/* ========== TAB PANELS ========== */
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ========== VISA TABLE ========== */
+.visa-section {
+  padding: 30px 24px;
+  max-width:1400px; margin:0 auto;
+  position:relative; z-index:5;
+}
+.visa-header {
+  text-align:center; margin-bottom:30px;
+}
+.visa-header h2 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:2rem; color: var(--gold);
+  margin-bottom:8px;
+}
+.visa-header p { color: var(--muted); font-size:0.9rem; }
+
+.visa-legend {
+  display:flex; flex-wrap:wrap; gap:12px;
+  justify-content:center; margin-bottom:24px;
+}
+.legend-item {
+  display:flex; align-items:center; gap:6px;
+  font-size:0.8rem; color: var(--muted);
+}
+.legend-dot {
+  width:10px; height:10px; border-radius:50%;
+}
+
+.visa-controls {
+  display:flex; flex-wrap:wrap; gap:12px;
+  justify-content:center; margin-bottom:20px;
+}
+.visa-select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--card-border);
+  color: var(--text); padding:9px 16px;
+  border-radius:8px; font-family:'Outfit',sans-serif;
+  font-size:0.88rem; outline:none; cursor:pointer;
+  min-width:220px;
+}
+.visa-select:focus { border-color: var(--gold); }
+.visa-select option { background: #0d1b3e; }
+
+.visa-table-wrap {
+  overflow-x:auto;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius:14px;
+  backdrop-filter: blur(10px);
+}
+.visa-table {
+  width:100%; border-collapse:collapse;
+  font-size:0.82rem;
+}
+.visa-table thead th {
+  background: rgba(240,192,64,0.1);
+  color: var(--gold); padding:12px 16px;
+  text-align:left; font-weight:600;
+  letter-spacing:0.05em; font-size:0.75rem;
+  text-transform:uppercase;
+  border-bottom: 1px solid var(--card-border);
+  position:sticky; top:0; z-index:5;
+  backdrop-filter: blur(10px);
+}
+.visa-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.2s;
+}
+.visa-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+.visa-table tbody td {
+  padding:11px 16px;
+  color: var(--cloud); vertical-align:middle;
+}
+.visa-table tbody td:first-child { color: var(--sand); font-weight:600; }
+
+.visa-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:600;
+}
+.visa-free-badge { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+.visa-arrival-badge { background: rgba(243,156,18,0.15); color: #f39c12; border: 1px solid rgba(243,156,18,0.3); }
+.visa-required-badge { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+.visa-evisa-badge { background: rgba(52,152,219,0.15); color: #3498db; border: 1px solid rgba(52,152,219,0.3); }
+
+.duration-tag {
+  font-size:0.7rem; color: var(--muted); display:block; margin-top:2px;
+}
+
+/* ========== FOOTER ========== */
+footer {
+  position:relative; z-index:5;
+  text-align:center; padding:30px;
+  color: var(--muted); font-size:0.8rem;
+  border-top: 1px solid var(--card-border);
+  background: rgba(10,15,35,0.7);
+  letter-spacing:0.05em;
+}
+
+@media(max-width:640px) {
+  .grid { grid-template-columns:1fr; padding:12px; }
+  .controls { padding:12px; top:52px; }
+  .tab-btn { padding:14px 14px; font-size:0.8rem; }
+  .visa-section { padding:20px 12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-globe">🌍</div>
+  <h1>World Countries Explorer</h1>
+  <p>Your complete global passport — cultures, currencies & connections</p>
+  <div class="header-stats">
+    <div class="stat-item"><strong id="totalCountries">195</strong> Countries</div>
+    <div class="stat-item"><strong>7</strong> Continents</div>
+    <div class="stat-item"><strong>180+</strong> Currencies</div>
+    <div class="stat-item"><strong>7000+</strong> Languages</div>
+  </div>
+</header>
+
+<div class="main-tabs">
+  <button class="tab-btn active" onclick="switchTab('explorer',this)">🗺️ Country Explorer</button>
+  <button class="tab-btn" onclick="switchTab('visa',this)">📋 Visa Information</button>
+</div>
+
+<!-- EXPLORER PANEL -->
+<div id="tab-explorer" class="tab-panel active">
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search countries, capitals, food…" oninput="filterCards()">
+    </div>
+    <div class="region-filters">
+      <button class="filter-btn active" onclick="setRegion('All',this)">All</button>
+      <button class="filter-btn" onclick="setRegion('Africa',this)">🌍 Africa</button>
+      <button class="filter-btn" onclick="setRegion('Asia',this)">🌏 Asia</button>
+      <button class="filter-btn" onclick="setRegion('Europe',this)">🏰 Europe</button>
+      <button class="filter-btn" onclick="setRegion('Americas',this)">🌎 Americas</button>
+      <button class="filter-btn" onclick="setRegion('Oceania',this)">🌊 Oceania</button>
+      <button class="filter-btn" onclick="setRegion('Middle East',this)">🕌 Middle East</button>
+      <button class="filter-btn" onclick="setRegion('Caribbean',this)">🏝️ Caribbean</button>
+    </div>
+  </div>
+  <div class="count-bar">Showing <span id="visibleCount">0</span> countries</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- VISA PANEL -->
+<div id="tab-visa" class="tab-panel">
+  <div class="visa-section">
+    <div class="visa-header">
+      <h2>🛂 Visa Requirements Guide</h2>
+      <p>Select your passport country to see entry requirements for other nations</p>
+    </div>
+    <div class="visa-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#2ecc71"></div> Visa Free</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div> Visa on Arrival</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div> eVisa Available</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div> Visa Required</div>
+    </div>
+    <div class="visa-controls">
+      <select class="visa-select" id="passportSelect" onchange="renderVisaTable()">
+        <option value="">— Select your passport country —</option>
+      </select>
+    </div>
+    <div class="visa-table-wrap">
+      <table class="visa-table" id="visaTable">
+        <thead>
+          <tr>
+            <th>Destination Country</th>
+            <th>Flag</th>
+            <th>Region</th>
+            <th>Entry Requirement</th>
+            <th>Stay Duration</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="visaTableBody">
+          <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">Select a passport country above to view visa requirements</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>🌐 World Countries Explorer &nbsp;|&nbsp; 195 Nations · 7 Continents · Endless Discovery</footer>
+
+<script>
+// =====================================================
+// COUNTRY DATA
+// =====================================================
+const countries = [
+  // AFRICA
+  { flag:"🇳🇬", code:"ng", name:"Nigeria", capital:"Abuja", region:"Africa", language:"English", currency:"Naira", currencyCode:"NGN", usdRate:"1 USD ≈ 1,560 NGN", lat:9.08, lon:8.67, description:"Africa's most populous nation and economic powerhouse, Nigeria blends ancient kingdoms, vibrant cities, and extraordinary natural beauty from the Niger Delta to savannah highlands.", attractions:"Zuma Rock, Olumo Rock, Yankari National Park, Lagos beaches, Osun-Osogbo Sacred Grove", food:"Jollof Rice, Egusi Soup, Suya, Pounded Yam, Pepper Soup, Moi Moi", tags:["Most populous African country","Nollywood film hub"] },
+  { flag:"🇿🇦", code:"za", name:"South Africa", capital:"Pretoria / Cape Town / Bloemfontein", region:"Africa", language:"11 official languages", currency:"Rand", currencyCode:"ZAR", usdRate:"1 USD ≈ 18.5 ZAR", lat:-30.56, lon:22.94, description:"The Rainbow Nation sits at Africa's southern tip, where dramatic landscapes from the Cape Winelands to the Drakensberg meet unparalleled wildlife and a complex, compelling history.", attractions:"Table Mountain, Kruger National Park, Cape Winelands, Robben Island, Garden Route", food:"Braai (BBQ), Bobotie, Bunny Chow, Biltong, Boerewors, Malva Pudding", tags:["Rainbow Nation","Big Five safaris"] },
+  { flag:"🇪🇬", code:"eg", name:"Egypt", capital:"Cairo", region:"Africa", language:"Arabic", currency:"Egyptian Pound", currencyCode:"EGP", usdRate:"1 USD ≈ 48 EGP", lat:26.82, lon:30.80, description:"The gift of the Nile, Egypt is one of humanity's oldest civilisations, where pharaonic monuments rise from desert sands alongside bustling bazaars and coral-rich Red Sea coasts.", attractions:"Pyramids of Giza, Sphinx, Luxor Temple, Valley of the Kings, Red Sea Riviera, Karnak", food:"Koshari, Ful Medames, Shawarma, Molokhia, Basbousa, Om Ali", tags:["Ancient civilization","Suez Canal"] },
+  { flag:"🇰🇪", code:"ke", name:"Kenya", capital:"Nairobi", region:"Africa", language:"Swahili, English", currency:"Kenyan Shilling", currencyCode:"KES", usdRate:"1 USD ≈ 129 KES", lat:-0.02, lon:37.91, description:"Kenya is the soul of East Africa — home to the Great Migration, snow-capped Kilimanjaro glimpsed across the border, coastal Swahili culture, and the indomitable Maasai spirit.", attractions:"Maasai Mara, Mount Kenya, Amboseli, Diani Beach, Lamu Old Town", food:"Nyama Choma, Ugali, Sukuma Wiki, Samosa, Chai, Mandazi", tags:["Great Migration","Maasai culture"] },
+  { flag:"🇲🇦", code:"ma", name:"Morocco", capital:"Rabat", region:"Africa", language:"Arabic, Berber, French", currency:"Dirham", currencyCode:"MAD", usdRate:"1 USD ≈ 10 MAD", lat:31.79, lon:-7.09, description:"Where Africa meets Europe and the Atlantic greets the Mediterranean, Morocco enchants with labyrinthine medinas, saffron-scented souks, Saharan dunes, and legendary imperial cities.", attractions:"Marrakech Medina, Fes El Bali, Sahara Desert, Hassan II Mosque, Chefchaouen (Blue City)", food:"Tagine, Couscous, Pastilla, Harira, Mint Tea, Msemen", tags:["Imperial cities","Sahara gateway"] },
+  { flag:"🇹🇿", code:"tz", name:"Tanzania", capital:"Dodoma", region:"Africa", language:"Swahili, English", currency:"Tanzanian Shilling", currencyCode:"TZS", usdRate:"1 USD ≈ 2,750 TZS", lat:-6.37, lon:34.89, description:"Tanzania cradles Africa's highest summit, its largest national park, and the spice-perfumed island of Zanzibar — a land of breathtaking contrasts where wilderness reigns supreme.", attractions:"Mount Kilimanjaro, Serengeti, Zanzibar, Ngorongoro Crater, Selous", food:"Ugali, Pilau, Zanzibar Pizza, Mishkaki, Mchuzi wa Samaki, Urojo", tags:["Kilimanjaro — Africa's highest peak","Zanzibar spice islands"] },
+  { flag:"🇬🇭", code:"gh", name:"Ghana", capital:"Accra", region:"Africa", language:"English", currency:"Cedi", currencyCode:"GHS", usdRate:"1 USD ≈ 15.5 GHS", lat:7.95, lon:-1.02, description:"The first sub-Saharan country to gain independence, Ghana radiates West African warmth, from its storied slave-trade forts to the pounding drums of Ashanti palaces.", attractions:"Cape Coast Castle, Kakum National Park, Mole National Park, Labadi Beach, Elmina Castle", food:"Jollof Rice, Fufu, Banku, Kelewele, Groundnut Soup, Waakye", tags:["First sub-Saharan independent","Gold Coast history"] },
+  { flag:"🇪🇹", code:"et", name:"Ethiopia", capital:"Addis Ababa", region:"Africa", language:"Amharic", currency:"Birr", currencyCode:"ETB", usdRate:"1 USD ≈ 57 ETB", lat:9.15, lon:40.49, description:"The cradle of humanity and the birthplace of coffee, Ethiopia stands alone — never colonised, rich with ancient churches hewn from solid rock, Afar volcanoes, and extraordinary highland culture.", attractions:"Lalibela Rock Churches, Simien Mountains, Danakil Depression, Aksum Obelisks, Lake Tana", food:"Injera with Tibs, Doro Wat, Kitfo, Shiro, Tej (honey wine), Chechebsa", tags:["Cradle of humanity","Coffee origin"] },
+  { flag:"🇷🇼", code:"rw", name:"Rwanda", capital:"Kigali", region:"Africa", language:"Kinyarwanda, French, English", currency:"Rwandan Franc", currencyCode:"RWF", usdRate:"1 USD ≈ 1,300 RWF", lat:-1.94, lon:29.87, description:"The Land of a Thousand Hills has risen from tragedy to become one of Africa's cleanest, most forward-thinking nations — where mountain gorillas roam misty volcanoes.", attractions:"Volcanoes National Park, Nyungwe Forest, Lake Kivu, Kigali Genocide Memorial", food:"Isombe, Ugali, Brochettes, Ibihaza, Ikivuguto (yogurt), Sambaza fish", tags:["Land of a thousand hills","Gorilla trekking"] },
+
+  // ASIA
+  { flag:"🇯🇵", code:"jp", name:"Japan", capital:"Tokyo", region:"Asia", language:"Japanese", currency:"Japanese Yen", currencyCode:"JPY", usdRate:"1 USD ≈ 149 JPY", lat:36.20, lon:138.25, description:"Japan is a study in beautiful contradictions — bullet trains and tranquil temples, neon-lit megacities and mist-wrapped mountain shrines, ancient ritual and cutting-edge innovation.", attractions:"Mount Fuji, Kyoto temples, Tokyo, Hiroshima Peace Park, Nara deer park", food:"Sushi, Ramen, Tempura, Wagyu Beef, Miso Soup, Takoyaki, Matcha everything", tags:["Land of the Rising Sun","World's oldest monarchy"] },
+  { flag:"🇨🇳", code:"cn", name:"China", capital:"Beijing", region:"Asia", language:"Mandarin", currency:"Renminbi (Yuan)", currencyCode:"CNY", usdRate:"1 USD ≈ 7.2 CNY", lat:35.86, lon:104.19, description:"The world's most populous nation spans five time zones, encompassing ancient imperial grandeur, karst limestone peaks, the world's longest wall, and a civilisation spanning five millennia.", attractions:"Great Wall, Forbidden City, Terracotta Army, Li River, Zhangjiajie mountains", food:"Peking Duck, Dim Sum, Hot Pot, Xiaolongbao, Kung Pao Chicken, Mapo Tofu", tags:["Ancient civilisation","Economic superpower"] },
+  { flag:"🇮🇳", code:"in", name:"India", capital:"New Delhi", region:"Asia", language:"Hindi, English + 21 others", currency:"Indian Rupee", currencyCode:"INR", usdRate:"1 USD ≈ 83 INR", lat:20.59, lon:78.96, description:"India is not a country — it's a civilisation, a festival, a spice. From the Himalayan peaks to tropical backwaters, from the Taj Mahal to the temples of Tamil Nadu, every moment overwhelms the senses.", attractions:"Taj Mahal, Rajasthan forts, Kerala backwaters, Varanasi ghats, Hampi ruins", food:"Butter Chicken, Biryani, Masala Dosa, Pani Puri, Samosa, Gulab Jamun, Idli", tags:["World's largest democracy","Bollywood & spices"] },
+  { flag:"🇹🇭", code:"th", name:"Thailand", capital:"Bangkok", region:"Asia", language:"Thai", currency:"Baht", currencyCode:"THB", usdRate:"1 USD ≈ 35 THB", lat:15.87, lon:100.99, description:"The Land of Smiles captivates with gilded temples, turquoise island waters, aromatic street food that perfumes every alley, and a warmth of hospitality that becomes deeply addictive.", attractions:"Grand Palace Bangkok, Phi Phi Islands, Chiang Mai temples, Ayutthaya ruins, Pai valley", food:"Pad Thai, Tom Yum, Green Curry, Som Tam, Mango Sticky Rice, Massaman Curry", tags:["Land of Smiles","World-class street food"] },
+  { flag:"🇻🇳", code:"vn", name:"Vietnam", capital:"Hanoi", region:"Asia", language:"Vietnamese", currency:"Vietnamese Dong", currencyCode:"VND", usdRate:"1 USD ≈ 24,500 VND", lat:14.06, lon:108.28, description:"Vietnam unspools along a sinuous coastline of emerald bays and rice-paddy valleys, where French-colonial architecture meets ancient Chinese-influenced temples and a cuisine that is arguably Southeast Asia's finest.", attractions:"Ha Long Bay, Hoi An Ancient Town, Hue Citadel, Sapa rice terraces, Mekong Delta", food:"Pho, Banh Mi, Bun Bo Hue, Banh Xeo, Cao Lau, Fresh Spring Rolls, Ca Phe Trung", tags:["Ha Long Bay UNESCO","Street food paradise"] },
+  { flag:"🇸🇬", code:"sg", name:"Singapore", capital:"Singapore", region:"Asia", language:"English, Mandarin, Malay, Tamil", currency:"Singapore Dollar", currencyCode:"SGD", usdRate:"1 USD ≈ 1.34 SGD", lat:1.35, lon:103.82, description:"The Lion City punches well above its tiny size — a gleaming city-state of futuristic gardens, world-class hawker food, and a melting pot of Malay, Chinese, Indian and colonial British cultures.", attractions:"Gardens by the Bay, Marina Bay Sands, Sentosa, Hawker Centres, Chinatown", food:"Hainanese Chicken Rice, Laksa, Chilli Crab, Char Kway Teow, Roti Prata, Nasi Lemak", tags:["Garden City","World's busiest port"] },
+  { flag:"🇮🇩", code:"id", name:"Indonesia", capital:"Jakarta", region:"Asia", language:"Indonesian", currency:"Indonesian Rupiah", currencyCode:"IDR", usdRate:"1 USD ≈ 15,800 IDR", lat:-0.79, lon:113.92, description:"The world's largest archipelago nation with 17,000 islands, Indonesia is a volcanic paradise of ancient Hindu temples, dense rainforests harbouring orangutans, and a rich mosaic of 300+ ethnic cultures.", attractions:"Bali temples, Komodo National Park, Borobudur, Raja Ampat, Mount Bromo", food:"Nasi Goreng, Rendang, Satay, Gado Gado, Soto, Babi Guling, Tempe", tags:["World's largest archipelago","Bali — Island of the Gods"] },
+  { flag:"🇰🇷", code:"kr", name:"South Korea", capital:"Seoul", region:"Asia", language:"Korean", currency:"South Korean Won", currencyCode:"KRW", usdRate:"1 USD ≈ 1,340 KRW", lat:35.91, lon:127.77, description:"South Korea is the engine of the Korean Wave — K-pop, K-drama and K-food exported globally from a peninsula that fuses Joseon-dynasty palaces with hyper-modern, ultra-connected cities.", attractions:"Gyeongbokgung Palace, Jeju Island, Bukchon Hanok Village, DMZ, Seoraksan", food:"Bibimbap, Korean BBQ, Kimchi, Tteokbokki, Japchae, Samgyeopsal, Bingsu", tags:["Korean Wave (Hallyu)","Tech powerhouse"] },
+  { flag:"🇲🇾", code:"my", name:"Malaysia", capital:"Kuala Lumpur", region:"Asia", language:"Malay, English, Mandarin", currency:"Ringgit", currencyCode:"MYR", usdRate:"1 USD ≈ 4.7 MYR", lat:4.21, lon:108.96, description:"Malaysia is a glorious blur of equatorial rainforests, colonial hill stations, skyscraper-studded cities, and a cuisine that masterfully weaves together Malay, Chinese, Indian and Nyonya flavours.", attractions:"Petronas Towers, Langkawi, Penang, Taman Negara, Kinabalu Park", food:"Nasi Lemak, Char Kway Teow, Roti Canai, Laksa, Satay, Cendol, Bak Kut Teh", tags:["Biodiversity hotspot","Truly Asia melting pot"] },
+
+  // EUROPE
+  { flag:"🇫🇷", code:"fr", name:"France", capital:"Paris", region:"Europe", language:"French", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:46.23, lon:2.21, description:"La Belle France is synonymous with joie de vivre — the world's most visited country offers Haussmanian boulevards, sun-drenched vineyards, Alpine villages, and a culinary tradition UNESCO-listed as cultural heritage.", attractions:"Eiffel Tower, Louvre, Palace of Versailles, French Riviera, Mont Saint-Michel, Burgundy", food:"Croissant, Bouillabaisse, Crêpes, Coq au Vin, Ratatouille, Steak Frites, Crème Brûlée", tags:["World's most visited country","Art & gastronomy capital"] },
+  { flag:"🇮🇹", code:"it", name:"Italy", capital:"Rome", region:"Europe", language:"Italian", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:41.87, lon:12.57, description:"Italy is an open-air museum where Roman forums, Renaissance frescoes and Baroque piazzas form the backdrop to the world's most beloved cuisine, from fresh pasta to gelato.", attractions:"Colosseum, Vatican, Cinque Terre, Amalfi Coast, Tuscany, Canal Grande Venice", food:"Neapolitan Pizza, Pasta Carbonara, Risotto, Gelato, Tiramisu, Ossobuco", tags:["Birthplace of the Renaissance","Most UNESCO sites globally"] },
+  { flag:"🇩🇪", code:"de", name:"Germany", capital:"Berlin", region:"Europe", language:"German", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:51.17, lon:10.45, description:"The land of Beethoven, BMW and Bauhaus combines fairy-tale Rhineland castles with post-war reinvention — Berlin's pulsating creativity, Bavaria's beer halls, and engineering precision that shaped the modern world.", attractions:"Neuschwanstein Castle, Berlin Wall, Black Forest, Cologne Cathedral, Rhine Valley", food:"Bratwurst, Pretzels, Sauerbraten, Schnitzel, Black Forest Cake, Currywurst, Lebkuchen", tags:["Engineering excellence","Cultural powerhouse"] },
+  { flag:"🇬🇧", code:"gb", name:"United Kingdom", capital:"London", region:"Europe", language:"English", currency:"British Pound Sterling", currencyCode:"GBP", usdRate:"1 USD ≈ 0.79 GBP", lat:55.38, lon:-3.44, description:"From the Scottish Highlands to the white cliffs of Dover, the UK weaves a story of empire, invention, and island identity — Parliament, the Beatles, Shakespeare and the greatest collection of museums on earth.", attractions:"Buckingham Palace, Stonehenge, Scottish Highlands, Lake District, Tower of London", food:"Fish & Chips, Full English Breakfast, Sunday Roast, Chicken Tikka Masala, Scones & Cream Tea", tags:["Mother of Parliaments","Home of the Beatles & Shakespeare"] },
+  { flag:"🇪🇸", code:"es", name:"Spain", capital:"Madrid", region:"Europe", language:"Spanish", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:40.46, lon:-3.75, description:"Spain is a feast of flamenco rhythms, Moorish palaces, Gaudí fantasias, sun-bleached plazas and an evening tapas culture that turns every dinner into a warm social ceremony.", attractions:"Sagrada Família, Alhambra, Ibiza, Park Güell, Prado Museum, Santiago de Compostela", food:"Paella, Jamón Ibérico, Patatas Bravas, Tortilla Española, Gazpacho, Churros", tags:["Flamenco & Fiesta","Gaudí architecture"] },
+  { flag:"🇳🇱", code:"nl", name:"Netherlands", capital:"Amsterdam", region:"Europe", language:"Dutch", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:52.13, lon:5.29, description:"A nation that reclaimed land from the sea, the Netherlands charms with canal-laced cities, Renaissance masterpieces, tulip-carpeted polders, and a progressive, open-minded culture.", attractions:"Rijksmuseum Amsterdam, Keukenhof tulips, Windmills of Kinderdijk, Van Gogh Museum, Delft", food:"Stroopwafel, Herring (Haring), Stamppot, Bitterballen, Appeltaart, Dutch Cheese", tags:["Below sea level","Golden Age art & trading nation"] },
+  { flag:"🇵🇹", code:"pt", name:"Portugal", capital:"Lisbon", region:"Europe", language:"Portuguese", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:39.40, lon:-8.22, description:"Perched on Europe's Atlantic edge, Portugal blends sun-drenched melancholy (saudade), great explorers' legacy, cobblestoned Alfama alleyways, and surf-pounded golden beaches.", attractions:"Jerónimos Monastery, Sintra palaces, Algarve cliffs, Douro Valley, Óbidos", food:"Pastéis de Nata, Bacalhau (salt cod), Francesinha, Bifanas, Caldo Verde, Pastel de Tentúgal", tags:["Age of Exploration legacy","Pastel de nata capital of the world"] },
+  { flag:"🇬🇷", code:"gr", name:"Greece", capital:"Athens", region:"Europe", language:"Greek", currency:"Euro", currencyCode:"EUR", usdRate:"1 USD ≈ 0.92 EUR", lat:39.07, lon:21.82, description:"The cradle of Western civilisation, Greece offers ancient ruins crowning sun-bleached hilltops above sapphire Aegean waters, island-hopping magic, and a Mediterranean diet that is the envy of the world.", attractions:"Acropolis, Santorini, Mykonos, Meteora monasteries, Delphi, Rhodes Old Town", food:"Moussaka, Souvlaki, Spanakopita, Taramasalata, Greek Salad, Loukoumades, Baklava", tags:["Birthplace of democracy","Aegean island paradise"] },
+  { flag:"🇸🇪", code:"se", name:"Sweden", capital:"Stockholm", region:"Europe", language:"Swedish", currency:"Swedish Krona", currencyCode:"SEK", usdRate:"1 USD ≈ 10.4 SEK", lat:60.13, lon:18.64, description:"Sweden's staggering natural beauty — midnight sun, Northern Lights, dark pine forests and glassy lakes — pairs with a sophisticated design heritage, Viking history and an enviable quality of life.", attractions:"Stockholm Old Town, Abisko Aurora Sky, Gothenburg, Gotland island, Vasa Museum", food:"Swedish Meatballs, Gravlax, Smörgåsbord, Cinnamon Buns, Surströmming, Janssons Frestelse", tags:["Nobel Prize homeland","ABBA & IKEA"] },
+
+  // AMERICAS
+  { flag:"🇺🇸", code:"us", name:"United States", capital:"Washington D.C.", region:"Americas", language:"English", currency:"US Dollar", currencyCode:"USD", usdRate:"Base currency", lat:37.09, lon:-95.71, description:"From the Grand Canyon to Manhattan's skyline, from Hollywood to Appalachian hollows, the United States contains multitudes — a vast experiment in reinvention, ambition, and cultural dynamism.", attractions:"Grand Canyon, NYC, Yellowstone, Hawaii, Disney World, San Francisco, Yosemite, New Orleans", food:"BBQ Ribs, New York Pizza, Lobster Roll, Tex-Mex, Philly Cheesesteak, Clam Chowder, Key Lime Pie", tags:["Superpower & cultural exporter","50 states of diversity"] },
+  { flag:"🇧🇷", code:"br", name:"Brazil", capital:"Brasília", region:"Americas", language:"Portuguese", currency:"Brazilian Real", currencyCode:"BRL", usdRate:"1 USD ≈ 5 BRL", lat:-14.24, lon:-51.93, description:"Largest country in South America, Brazil pulses to samba rhythms under a canopy of Amazon rainforest, where Rio's Carnival energy meets Iguaçu Falls' thundering power and world-class football.", attractions:"Iguaçu Falls, Christ the Redeemer, Amazon Rainforest, Copacabana Beach, Pantanal", food:"Churrasco, Feijoada, Pão de Queijo, Coxinha, Brigadeiro, Açaí, Moqueca de Camarão", tags:["Amazon rainforest","Carnival capital"] },
+  { flag:"🇨🇦", code:"ca", name:"Canada", capital:"Ottawa", region:"Americas", language:"English, French", currency:"Canadian Dollar", currencyCode:"CAD", usdRate:"1 USD ≈ 1.36 CAD", lat:56.13, lon:-106.35, description:"The world's second-largest country by area stretches from Atlantic fishing villages to Pacific mountains, across prairie skies and Arctic tundra — a mosaic of cultures united by remarkable natural beauty.", attractions:"Banff & Jasper, Niagara Falls, Vancouver, Quebec City Old Town, Northern Lights Yukon", food:"Poutine, Butter Tarts, Tourtière, Beavertails, Nanaimo Bars, Smoked Meat Sandwich", tags:["World's second largest country","Northern Lights & maple syrup"] },
+  { flag:"🇲🇽", code:"mx", name:"Mexico", capital:"Mexico City", region:"Americas", language:"Spanish", currency:"Mexican Peso", currencyCode:"MXN", usdRate:"1 USD ≈ 17 MXN", lat:23.63, lon:-102.55, description:"Mexico is the world's great cradle of chocolate, corn and chilli — where Aztec pyramids neighbour colonial baroque churches, Pacific surf towns meet Caribbean turquoise, and every market smells of orange blossom.", attractions:"Chichen Itza, Cenotes, Oaxaca, Copper Canyon, Guanajuato, Tulum, Mexico City Zócalo", food:"Tacos al Pastor, Mole Negro, Guacamole, Enchiladas, Chiles en Nogada, Tamales, Churros", tags:["Aztec & Maya heritage","Tequila & chocolate origin"] },
+  { flag:"🇦🇷", code:"ar", name:"Argentina", capital:"Buenos Aires", region:"Americas", language:"Spanish", currency:"Argentine Peso", currencyCode:"ARS", usdRate:"1 USD ≈ 870 ARS", lat:-38.42, lon:-63.62, description:"Argentina stretches from the tropics to the ice fields of Patagonia, where tango is a way of life, beef is a religion, and the dramatic landscapes range from Andean ski resorts to wine valleys.", attractions:"Patagonia, Iguazú Falls, Buenos Aires, Perito Moreno Glacier, Mendoza wine region", food:"Asado (BBQ), Empanadas, Mate, Dulce de Leche, Medialunas, Choripán, Alfajores", tags:["Land of Tango","Patagonia & Mendoza wine"] },
+  { flag:"🇵🇪", code:"pe", name:"Peru", capital:"Lima", region:"Americas", language:"Spanish, Quechua, Aymara", currency:"Peruvian Sol", currencyCode:"PEN", usdRate:"1 USD ≈ 3.75 PEN", lat:-9.19, lon:-75.02, description:"Peru is a land of astonishing verticality — from Pacific coastal deserts to Amazon jungle canopy, with the Inca's extraordinary Andean Empire woven through cloud forests and high-altitude cities.", attractions:"Machu Picchu, Cusco, Sacred Valley, Nazca Lines, Amazon, Rainbow Mountain, Lake Titicaca", food:"Ceviche, Lomo Saltado, Cuy (guinea pig), Causa, Anticuchos, Pisco Sour, Alfajores", tags:["Inca Empire legacy","Machu Picchu wonder"] },
+  { flag:"🇨🇴", code:"co", name:"Colombia", capital:"Bogotá", region:"Americas", language:"Spanish", currency:"Colombian Peso", currencyCode:"COP", usdRate:"1 USD ≈ 3,900 COP", lat:4.57, lon:-74.30, description:"Colombia has rewritten its story — from turbulent past to one of South America's most exciting destinations, with colonial Cartagena, coffee-scented Andean fincas, and Caribbean coast joy.", attractions:"Cartagena walled city, Coffee Region (Eje Cafetero), Tayrona Park, Medellín, Salt Cathedral", food:"Bandeja Paisa, Arepas, Sancocho, Empanadas, Aguapanela, Buñuelos, Cholado", tags:["World's finest coffee","Reinvented nation"] },
+
+  // OCEANIA
+  { flag:"🇦🇺", code:"au", name:"Australia", capital:"Canberra", region:"Oceania", language:"English", currency:"Australian Dollar", currencyCode:"AUD", usdRate:"1 USD ≈ 1.53 AUD", lat:-25.27, lon:133.78, description:"Australia is the world's largest island and smallest continent — ancient Aboriginal culture, the Great Barrier Reef, the red-rock Outback, and laid-back cities where beaches define the daily rhythm.", attractions:"Great Barrier Reef, Sydney Opera House, Uluru, Great Ocean Road, Kakadu, Whitsundays", food:"Vegemite on Toast, Meat Pie, Barramundi, Tim Tams, Pavlova, Fairy Bread, Lamingtons", tags:["Ancient Aboriginal culture","Reef & Outback wonder"] },
+  { flag:"🇳🇿", code:"nz", name:"New Zealand", capital:"Wellington", region:"Oceania", language:"English, Māori", currency:"New Zealand Dollar", currencyCode:"NZD", usdRate:"1 USD ≈ 1.63 NZD", lat:-40.90, lon:174.89, description:"Aotearoa — 'the land of the long white cloud' — is Middle Earth made real: geothermal wonderlands, fjords of impossible depth, Māori culture of great vitality, and bungee jumping invented here.", attractions:"Milford Sound, Tongariro Alpine Crossing, Bay of Islands, Rotorua, Hobbiton, Abel Tasman", food:"Hangi (earth oven feast), Lamb Roast, Whitebait Fritters, Pavlova, Fish & Chips, Kiwi on Toast", tags:["Lord of the Rings landscape","Māori culture & bungee jumping"] },
+  { flag:"🇫🇯", code:"fj", name:"Fiji", capital:"Suva", region:"Oceania", language:"English, Fijian, Hindi", currency:"Fijian Dollar", currencyCode:"FJD", usdRate:"1 USD ≈ 2.25 FJD", lat:-17.71, lon:178.07, description:"Fiji's 330 islands shimmer across the South Pacific like scattered jewels — where coral reefs swarm with life, bures (thatched huts) nestle on white sand, and 'Bula!' is the most generous greeting on earth.", attractions:"Yasawa Islands, Beqa Lagoon diving, Taveuni waterfalls, Levuka old capital, Sigatoka Sand Dunes", food:"Kokoda (raw fish in coconut), Lovo feast, Taro leaves & coconut, Rourou, Cassava cake, Kava ceremony", tags:["Soft coral capital of the world","Pacific Island paradise"] },
+
+  // MIDDLE EAST
+  { flag:"🇦🇪", code:"ae", name:"United Arab Emirates", capital:"Abu Dhabi", region:"Middle East", language:"Arabic", currency:"UAE Dirham", currencyCode:"AED", usdRate:"1 USD ≈ 3.67 AED", lat:23.42, lon:53.85, description:"In barely five decades the UAE transformed desert into a glittering showcase of human ambition — home to the world's tallest tower, artificial islands, and a bold vision of what 21st-century civilisation can look like.", attractions:"Burj Khalifa, Dubai Mall, Palm Jumeirah, Sheikh Zayed Grand Mosque, Dubai Desert Safari", food:"Al Harees, Shawarma, Machboos, Luqaimat (dumplings), Camel Milk Ice Cream, Knafeh", tags:["Burj Khalifa — world's tallest","Desert to futuristic city"] },
+  { flag:"🇸🇦", code:"sa", name:"Saudi Arabia", capital:"Riyadh", region:"Middle East", language:"Arabic", currency:"Saudi Riyal", currencyCode:"SAR", usdRate:"1 USD ≈ 3.75 SAR", lat:23.89, lon:45.08, description:"The guardian of Islam's holiest cities, Saudi Arabia is opening its doors to reveal millennia of Nabataean heritage at Hegra, dramatic Red Sea diving, volcanic black lava fields, and a Vision 2030 transformation.", attractions:"Makkah & Madinah, Al-Ula & Hegra, Red Sea coast, Diriyah, Edge of the World cliff", food:"Kabsa (national dish), Mandi, Jareesh, Saleeg rice, Dates, Arabic Qahwa (coffee), Harees", tags:["Custodian of the two holy mosques","Vision 2030 transformation"] },
+  { flag:"🇹🇷", code:"tr", name:"Turkey", capital:"Ankara", region:"Middle East", language:"Turkish", currency:"Turkish Lira", currencyCode:"TRY", usdRate:"1 USD ≈ 32 TRY", lat:38.96, lon:35.24, description:"Straddling two continents, Turkey is where East meets West in spectacular fashion — mosques and Byzantine churches share skylines, hot-air balloons float above Cappadocia's fairy chimneys, and bazaars dazzle the senses.", attractions:"Hagia Sophia, Cappadocia, Ephesus, Pamukkale, Topkapi Palace, Bosphorus, Bodrum", food:"Kebab, Lahmacun, Baklava, Menemen, Meze platters, Turkish Tea, Simit, Turkish Delight", tags:["Continent-spanning nation","Cappadocia hot-air balloons"] },
+  { flag:"🇯🇴", code:"jo", name:"Jordan", capital:"Amman", region:"Middle East", language:"Arabic", currency:"Jordanian Dinar", currencyCode:"JOD", usdRate:"1 USD ≈ 0.71 JOD", lat:30.59, lon:36.24, description:"Jordan is a jewel of the Middle East — the rose-red rock city of Petra carved by the Nabataeans, the lowest point on earth at the Dead Sea, and the Wadi Rum desert that feels like Mars beneath Milky Way skies.", attractions:"Petra (Rose City), Wadi Rum, Dead Sea, Jerash Roman ruins, Aqaba Red Sea, Dana Biosphere", food:"Mansaf (national dish — lamb in jameed), Falafel, Hummus, Maqluba, Kanafeh, Musakhan, Arak", tags:["Petra — 7th Wonder of the World","Dead Sea — lowest point on Earth"] },
+
+  // CARIBBEAN
+  { flag:"🇨🇺", code:"cu", name:"Cuba", capital:"Havana", region:"Caribbean", language:"Spanish", currency:"Cuban Peso", currencyCode:"CUP", usdRate:"1 USD ≈ 24 CUP", lat:21.52, lon:-77.78, description:"Frozen gloriously in time, Cuba is a surreal paradise of American classic cars rolling past Spanish colonial facades, salsa rhythms spilling from every doorway, and a deep revolutionary spirit that never quite dimmed.", attractions:"Old Havana, Viñales Valley tobacco farms, Trinidad, Bay of Pigs, Varadero beach, Che Guevara Mausoleum", food:"Ropa Vieja, Congri (rice & black beans), Lechón Asado, Tostones, Cuban Sandwich, Mojito, Daiquiri", tags:["Classic cars & salsa","Living time capsule"] },
+  { flag:"🇯🇲", code:"jm", name:"Jamaica", capital:"Kingston", region:"Caribbean", language:"English", currency:"Jamaican Dollar", currencyCode:"JMD", usdRate:"1 USD ≈ 158 JMD", lat:18.11, lon:-77.30, description:"Out of Many, One People — Jamaica is the island that gave the world reggae, Rastafari, the fastest sprinters, and a jerk seasoning that ignites the senses, all wrapped in the Blue Mountains' misty embrace.", attractions:"Blue Mountains, Dunn's River Falls, Negril Seven Mile Beach, Bob Marley Museum, Rick's Café", food:"Jerk Chicken, Ackee & Saltfish, Oxtail Stew, Festival (sweet dumpling), Curry Goat, Blue Mountain Coffee", tags:["Reggae & Rastafari homeland","World's fastest runners"] },
+  { flag:"🇧🇧", code:"bb", name:"Barbados", capital:"Bridgetown", region:"Caribbean", language:"English", currency:"Barbadian Dollar", currencyCode:"BBD", usdRate:"1 USD ≈ 2 BBD (fixed)", lat:13.19, lon:-59.54, description:"The most easterly Caribbean island, Barbados ('Little England') blends British colonial architecture with Bajan warmth, world-class cricket, the birthplace of rum, and the incomparable sunset strip of Holetown.", attractions:"Harrison's Cave, Bridgetown UNESCO Historic Garrison, Animal Flower Cave, Bathsheba surfing, Crane Beach", food:"Flying Fish & Cou-Cou (national dish), Macaroni Pie, Pudding & Souse, Rum Punch, Fish Cakes, Conkies", tags:["Birthplace of rum","Cricket powerhouse"] },
+];
+
+// =====================================================
+// VISA DATA (simplified authoritative guide)
+// =====================================================
+const visaData = {
+  "United States": {
+    "France":"Visa Free","Germany":"Visa Free","Italy":"Visa Free","Spain":"Visa Free",
+    "United Kingdom":"Visa Free","Japan":"Visa Free","South Korea":"Visa Free","Australia":"Visa Free",
+    "Canada":"Visa Free","Mexico":"Visa Free","Brazil":"Visa Free","Argentina":"Visa Free",
+    "India":"Visa Required","China":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa Free",
+    "Vietnam":"eVisa","Singapore":"Visa Free","Egypt":"Visa on Arrival","Morocco":"Visa Free",
+    "South Africa":"Visa Free","Kenya":"eVisa","Nigeria":"Visa Required","Ethiopia":"eVisa",
+    "Saudi Arabia":"eVisa","UAE":"Visa on Arrival","Turkey":"eVisa","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Free","Fiji":"Visa Free","Cuba":"Visa Required","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Free","Sweden":"Visa Free","Portugal":"Visa Free","Greece":"Visa Free"
+  },
+  "India": {
+    "France":"Visa Required","Germany":"Visa Required","Italy":"Visa Required","Spain":"Visa Required",
+    "United Kingdom":"Visa Required","Japan":"Visa Required","South Korea":"Visa Required","Australia":"Visa Required",
+    "Canada":"Visa Required","Mexico":"Visa Free","Brazil":"Visa Free","Argentina":"Visa Free",
+    "United States":"Visa Required","China":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa on Arrival",
+    "Vietnam":"eVisa","Singapore":"Visa Required","Egypt":"Visa on Arrival","Morocco":"Visa Required",
+    "South Africa":"Visa Required","Kenya":"eVisa","Nigeria":"Visa Required","Ethiopia":"eVisa",
+    "Saudi Arabia":"Visa Required","UAE":"Visa on Arrival","Turkey":"eVisa","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Required","Fiji":"Visa Free","Cuba":"Visa Required","Jamaica":"Visa Required",
+    "Barbados":"Visa Free","Netherlands":"Visa Required","Sweden":"Visa Required","Portugal":"Visa Required","Greece":"Visa Required"
+  },
+  "United Kingdom": {
+    "France":"Visa Free","Germany":"Visa Free","Italy":"Visa Free","Spain":"Visa Free",
+    "United States":"Visa Free","Japan":"Visa Free","South Korea":"Visa Free","Australia":"Visa Free",
+    "Canada":"Visa Free","Mexico":"Visa Free","Brazil":"Visa Free","Argentina":"Visa Free",
+    "India":"Visa Required","China":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa Free",
+    "Vietnam":"eVisa","Singapore":"Visa Free","Egypt":"Visa on Arrival","Morocco":"Visa Free",
+    "South Africa":"Visa Free","Kenya":"eVisa","Nigeria":"Visa Required","Ethiopia":"eVisa",
+    "Saudi Arabia":"eVisa","UAE":"Visa on Arrival","Turkey":"eVisa","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Free","Fiji":"Visa Free","Cuba":"Visa Required","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Free","Sweden":"Visa Free","Portugal":"Visa Free","Greece":"Visa Free"
+  },
+  "Germany": {
+    "France":"Visa Free","Italy":"Visa Free","Spain":"Visa Free",
+    "United States":"Visa Free","United Kingdom":"Visa Free","Japan":"Visa Free","South Korea":"Visa Free","Australia":"Visa Free",
+    "Canada":"Visa Free","Mexico":"Visa Free","Brazil":"Visa Free","Argentina":"Visa Free",
+    "India":"Visa Required","China":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa Free",
+    "Vietnam":"eVisa","Singapore":"Visa Free","Egypt":"Visa on Arrival","Morocco":"Visa Free",
+    "South Africa":"Visa Free","Kenya":"eVisa","Nigeria":"Visa Required","Ethiopia":"eVisa",
+    "Saudi Arabia":"eVisa","UAE":"Visa on Arrival","Turkey":"eVisa","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Free","Fiji":"Visa Free","Cuba":"Visa Required","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Free","Sweden":"Visa Free","Portugal":"Visa Free","Greece":"Visa Free"
+  },
+  "Japan": {
+    "France":"Visa Free","Germany":"Visa Free","Italy":"Visa Free","Spain":"Visa Free",
+    "United States":"Visa Free","United Kingdom":"Visa Free","South Korea":"Visa Free","Australia":"Visa Free",
+    "Canada":"Visa Free","Mexico":"Visa Free","Brazil":"Visa Free","Argentina":"Visa Free",
+    "India":"Visa Required","China":"Visa Required","Indonesia":"Visa Free","Thailand":"Visa Free",
+    "Vietnam":"Visa Free","Singapore":"Visa Free","Egypt":"Visa on Arrival","Morocco":"Visa Free",
+    "South Africa":"Visa Free","Kenya":"eVisa","Nigeria":"Visa Required","Ethiopia":"eVisa",
+    "Saudi Arabia":"eVisa","UAE":"Visa on Arrival","Turkey":"eVisa","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Free","Fiji":"Visa Free","Cuba":"Visa Required","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Free","Sweden":"Visa Free","Portugal":"Visa Free","Greece":"Visa Free"
+  },
+  "Australia": {
+    "France":"Visa Free","Germany":"Visa Free","Italy":"Visa Free","Spain":"Visa Free",
+    "United States":"Visa Free","United Kingdom":"Visa Free","Japan":"Visa Free","South Korea":"Visa Free",
+    "Canada":"Visa Free","Mexico":"Visa Free","Brazil":"Visa Free","Argentina":"Visa Free",
+    "India":"Visa Required","China":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa Free",
+    "Vietnam":"eVisa","Singapore":"Visa Free","Egypt":"Visa on Arrival","Morocco":"Visa Free",
+    "South Africa":"Visa Free","Kenya":"eVisa","Nigeria":"Visa Required","Ethiopia":"eVisa",
+    "Saudi Arabia":"eVisa","UAE":"Visa on Arrival","Turkey":"eVisa","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Free","Fiji":"Visa Free","Cuba":"Visa Required","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Free","Sweden":"Visa Free","Portugal":"Visa Free","Greece":"Visa Free"
+  },
+  "China": {
+    "France":"Visa Free (15d)","Germany":"Visa Free (15d)","Italy":"Visa Free (15d)","Spain":"Visa Free (15d)",
+    "United States":"Visa Required","United Kingdom":"Visa Free (15d)","Japan":"Visa Required","South Korea":"Visa Free (15d)",
+    "Australia":"Visa Required","Canada":"Visa Required","Mexico":"Visa Free","Brazil":"Visa Free",
+    "India":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa Free","Vietnam":"Visa Required",
+    "Singapore":"Visa Free","Egypt":"Visa on Arrival","Morocco":"Visa Free",
+    "South Africa":"Visa Free","Kenya":"Visa on Arrival","Nigeria":"Visa Required",
+    "Saudi Arabia":"Visa Required","UAE":"Visa on Arrival","Turkey":"Visa Free","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Required","Fiji":"Visa Free","Cuba":"Visa Free","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Free (15d)","Sweden":"Visa Free (15d)","Portugal":"Visa Free (15d)","Greece":"Visa Free (15d)"
+  },
+  "Nigeria": {
+    "France":"Visa Required","Germany":"Visa Required","Italy":"Visa Required","Spain":"Visa Required",
+    "United States":"Visa Required","United Kingdom":"Visa Required","Japan":"Visa Required","South Korea":"Visa Required",
+    "Australia":"Visa Required","Canada":"Visa Required","Mexico":"Visa Free","Brazil":"Visa Free",
+    "India":"Visa on Arrival","China":"Visa Required","Indonesia":"Visa on Arrival","Thailand":"Visa on Arrival",
+    "Vietnam":"eVisa","Singapore":"Visa Required","Egypt":"Visa on Arrival","Morocco":"Visa Required",
+    "South Africa":"Visa Required","Kenya":"Visa Free","Ethiopia":"eVisa",
+    "Saudi Arabia":"Visa Required","UAE":"Visa on Arrival","Turkey":"Visa Free","Jordan":"Visa on Arrival",
+    "New Zealand":"Visa Required","Fiji":"Visa Free","Cuba":"Visa Free","Jamaica":"Visa Free",
+    "Barbados":"Visa Free","Netherlands":"Visa Required","Sweden":"Visa Required","Portugal":"Visa Required","Greece":"Visa Required"
+  }
+};
+
+const stayDurations = {
+  "Visa Free":"90 days","Visa on Arrival":"30 days","eVisa":"30–90 days","Visa Required":"Varies by embassy",
+  "Visa Free (15d)":"15 days"
+};
+
+const visaNotes = {
+  "Visa Free":"No prior application needed. Check passport validity requirements.",
+  "Visa on Arrival":"Obtain visa at the port of entry. Ensure you carry required documents and fees.",
+  "eVisa":"Apply online before travel. Usually processed within 24–72 hours.",
+  "Visa Required":"Apply at the embassy or consulate in advance. Processing times vary.",
+  "Visa Free (15d)":"Special bilateral agreement — 15 day visa-free stay only."
+};
+
+// =====================================================
+// FLAG CDN URL helper
+// =====================================================
+function flagUrl(code) {
+  return `https://flagcdn.com/w80/${code.toLowerCase()}.png`;
+}
+
+// =====================================================
+// BUILD CARD
+// =====================================================
+function buildCard(c, i) {
+  const foods = c.food.split(',').map(f => `<span class="food-pill">${f.trim()}</span>`).join('');
+  const tags = c.tags.map(t => `<span class="tag">${t}</span>`).join('');
+  const delay = (i % 12) * 40;
+  return `
+  <div class="card" data-region="${c.region}" data-name="${c.name.toLowerCase()}" style="animation-delay:${delay}ms">
+    <div class="card-header">
+      <img class="flag-banner" src="${flagUrl(c.code)}" alt="${c.name} flag" onerror="this.style.display='none'">
+      <div class="card-header-content">
+        <div class="flag-emoji">${c.flag}</div>
+        <div class="country-title">
+          <h2>${c.name}</h2>
+          <span class="region-tag">${c.region}</span>
+          <div class="coord-badge">📍 ${c.lat}°, ${c.lon}°</div>
+        </div>
+        <img class="flag-img-small" src="${flagUrl(c.code)}" alt="${c.name} flag" onerror="this.style.display='none'">
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-label">🏛 Capital & Country</div>
+      <div class="info-row">
+        <span class="info-label">Capital</span>
+        <span class="info-value">${c.capital}</span>
+      </div>
+      <p class="description-text">${c.description}</p>
+    </div>
+
+    <div class="card-section">
+      <div class="section-label">💱 Currency</div>
+      <div class="currency-block">
+        <div class="currency-icon">💰</div>
+        <div class="currency-info">
+          <div class="currency-name">${c.currency}</div>
+          <div class="currency-code">Code: ${c.currencyCode}</div>
+          <div class="currency-usd">📊 ${c.usdRate}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-label">🌐 Coordinates</div>
+      <div class="coords-row">
+        <div class="coord-item">
+          <div class="coord-val">${c.lat > 0 ? c.lat+'°N' : Math.abs(c.lat)+'°S'}</div>
+          <div class="coord-lbl">Latitude</div>
+        </div>
+        <div class="coord-item">
+          <div class="coord-val">${c.lon > 0 ? c.lon+'°E' : Math.abs(c.lon)+'°W'}</div>
+          <div class="coord-lbl">Longitude</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-label">🍽 Must-Try Food</div>
+      <div class="food-pills">${foods}</div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-label">🗣 Language & Attractions</div>
+      <div class="info-row">
+        <span class="info-label">Language</span>
+        <span class="info-value">${c.language}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">🗺 Top Spots</span>
+        <span class="info-value">${c.attractions}</span>
+      </div>
+    </div>
+
+    <div class="card-footer">${tags}</div>
+  </div>`;
+}
+
+// =====================================================
+// RENDER & FILTER
+// =====================================================
+let currentRegion = 'All';
+
+function renderAll() {
+  document.getElementById('grid').innerHTML = countries.map((c,i) => buildCard(c,i)).join('');
+  document.getElementById('visibleCount').textContent = countries.length;
+  document.getElementById('totalCountries').textContent = countries.length;
+  populatePassportSelect();
+}
+
+function setRegion(region, btn) {
+  currentRegion = region;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCards();
+}
+
+function filterCards() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let visible = 0;
+  document.querySelectorAll('.card').forEach(card => {
+    const name = card.dataset.name;
+    const region = card.dataset.region;
+    const text = card.innerText.toLowerCase();
+    const matchRegion = currentRegion === 'All' || region === currentRegion;
+    const matchSearch = !search || text.includes(search) || name.includes(search);
+    if (matchRegion && matchSearch) {
+      card.classList.remove('hidden');
+      visible++;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+  document.getElementById('visibleCount').textContent = visible;
+}
+
+// =====================================================
+// TAB SWITCHING
+// =====================================================
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// =====================================================
+// VISA TABLE
+// =====================================================
+function populatePassportSelect() {
+  const sel = document.getElementById('passportSelect');
+  Object.keys(visaData).sort().forEach(country => {
+    const opt = document.createElement('option');
+    opt.value = country;
+    opt.textContent = country;
+    sel.appendChild(opt);
+  });
+}
+
+function getVisaBadgeClass(req) {
+  if (!req) return 'visa-required-badge';
+  const r = req.toLowerCase();
+  if (r.includes('free')) return 'visa-free-badge';
+  if (r.includes('arrival')) return 'visa-arrival-badge';
+  if (r.includes('evisa') || r.includes('e-visa')) return 'visa-evisa-badge';
+  return 'visa-required-badge';
+}
+
+function getVisaEmoji(req) {
+  if (!req) return '❌';
+  const r = req.toLowerCase();
+  if (r.includes('free')) return '✅';
+  if (r.includes('arrival')) return '🛬';
+  if (r.includes('evisa') || r.includes('e-visa')) return '💻';
+  return '📋';
+}
+
+function renderVisaTable() {
+  const passport = document.getElementById('passportSelect').value;
+  const tbody = document.getElementById('visaTableBody');
+  if (!passport) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">Select a passport country above to view visa requirements</td></tr>';
+    return;
+  }
+  const requirements = visaData[passport] || {};
+  const rows = countries.filter(c => c.name !== passport);
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">No data available</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => {
+    const req = requirements[c.name] || "Visa Required";
+    const badgeClass = getVisaBadgeClass(req);
+    const emoji = getVisaEmoji(req);
+    const duration = stayDurations[req] || stayDurations["Visa Required"];
+    const note = visaNotes[req] || visaNotes["Visa Required"];
+    return `
+    <tr>
+      <td>${c.name}</td>
+      <td><img src="${flagUrl(c.code)}" width="36" height="24" style="border-radius:3px;vertical-align:middle;object-fit:cover;" onerror="this.replaceWith(document.createTextNode('${c.flag}'))"> ${c.flag}</td>
+      <td style="color:var(--muted)">${c.region}</td>
+      <td><span class="visa-badge ${badgeClass}">${emoji} ${req}</span></td>
+      <td><span style="color:var(--mint);font-size:0.82rem;">⏱ ${duration}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem;max-width:260px">${note}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =====================================================
+// INIT
+// =====================================================
+renderAll();
+</script>
+</body>
+</html>
