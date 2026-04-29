@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Countries Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #e8b86d;
+    --accent2: #7eb8d4;
+    --text: #e8e8f0;
+    --muted: #888899;
+    --tag-bg: #1e1e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #0d0d18 0%, #1a1020 50%, #0d1520 100%);
+    padding: 60px 20px 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(232,184,109,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent) 0%, #f5d08a 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 1.05rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 30px;
+  }
+  .stats {
+    display: inline-flex; gap: 30px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 10px 24px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .stats span { color: var(--accent); font-weight: 600; }
+  .controls {
+    background: var(--surface);
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: center; justify-content: center;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .search-wrap {
+    position: relative; flex: 1; min-width: 220px; max-width: 380px;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px 10px 40px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap::before {
+    content: '🔍';
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 0.85rem;
+  }
+  .region-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .filter-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0a0a0f;
+    font-weight: 600;
+  }
+  .count-bar {
+    text-align: center;
+    padding: 14px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .count-bar span { color: var(--accent); font-weight: 600; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+    padding: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 40px rgba(232,184,109,0.12);
+  }
+  .card-header {
+    padding: 18px 20px 14px;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+  }
+  .flag { font-size: 2.4rem; line-height: 1; }
+  .country-title h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .country-title .region-tag {
+    font-size: 0.72rem;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+    letter-spacing: 0.04em;
+  }
+  .card-body { padding: 16px 20px; }
+  .info-row {
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+  }
+  .info-row .label {
+    color: var(--muted);
+    min-width: 78px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding-top: 1px;
+  }
+  .info-row .value { color: var(--text); line-height: 1.5; }
+  .info-row .icon { font-size: 1rem; margin-right: 4px; }
+  .card-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .tag {
+    background: rgba(232,184,109,0.08);
+    border: 1px solid rgba(232,184,109,0.2);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+  }
+  .hidden { display: none !important; }
+  footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  @media(max-width:600px) {
+    .grid { grid-template-columns: 1fr; padding: 12px; }
+    .controls { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌍 World Countries Explorer</h1>
+  <p>Discover attractions, cuisine, culture & more from every nation</p>
+  <div class="stats">
+    <div><span id="totalCount">195</span> Countries</div>
+    <div><span>7</span> Continents</div>
+    <div><span>195</span> Cultures</div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="Search countries..." oninput="filterCards()">
+  </div>
+  <div class="region-filters">
+    <button class="filter-btn active" onclick="setRegion('All', this)">All</button>
+    <button class="filter-btn" onclick="setRegion('Africa', this)">🌍 Africa</button>
+    <button class="filter-btn" onclick="setRegion('Asia', this)">🌏 Asia</button>
+    <button class="filter-btn" onclick="setRegion('Europe', this)">🌍 Europe</button>
+    <button class="filter-btn" onclick="setRegion('Americas', this)">🌎 Americas</button>
+    <button class="filter-btn" onclick="setRegion('Oceania', this)">🌊 Oceania</button>
+    <button class="filter-btn" onclick="setRegion('Middle East', this)">🕌 Middle East</button>
+    <button class="filter-btn" onclick="setRegion('Caribbean', this)">🏝️ Caribbean</button>
+  </div>
+</div>
+
+<div class="count-bar">Showing <span id="visibleCount">195</span> of 195 countries</div>
+
+<div class="grid" id="grid"></div>
+
+<footer>🌐 World Countries Explorer — All 195 UN-recognized countries &nbsp;|&nbsp; Data curated for educational purposes</footer>
+
+<script>
+const countries = [
+  // AFRICA (54)
+  { flag:"🇳🇬", name:"Nigeria", capital:"Abuja", region:"Africa", language:"English", currency:"Naira (NGN)", attractions:"Zuma Rock, Olumo Rock, Yankari National Park, Lagos beaches, Osun-Osogbo Sacred Grove", food:"Jollof Rice, Egusi Soup, Suya, Pounded Yam, Pepper Soup", tags:["Most populous African country","Nollywood film hub"] },
+  { flag:"🇿🇦", name:"South Africa", capital:"Pretoria / Cape Town / Bloemfontein", region:"Africa", language:"11 official languages", currency:"Rand (ZAR)", attractions:"Table Mountain, Kruger National Park, Cape Winelands, Robben Island, Garden Route", food:"Braai, Bobotie, Bunny Chow, Biltong, Boerewors", tags:["Rainbow Nation","Big Five safaris"] },
+  { flag:"🇪🇬", name:"Egypt", capital:"Cairo", region:"Africa", language:"Arabic", currency:"Egyptian Pound (EGP)", attractions:"Pyramids of Giza, Sphinx, Luxor Temple, Valley of the Kings, Red Sea Riviera, Karnak", food:"Koshari, Ful Medames, Shawarma, Molokhia, Basbousa", tags:["Ancient civilization","Suez Canal"] },
+  { flag:"🇪🇹", name:"Ethiopia", capital:"Addis Ababa", region:"Africa", language:"Amharic", currency:"Birr (ETB)", attractions:"Lalibela Rock Churches, Simien Mountains, Danakil Depression, Aksum Obelisks, Lake Tana", food:"Injera with Tibs, Doro Wat, Kitfo, Shiro, Tej (honey wine)", tags:["Cradle of humanity","Coffee origin"] },
+  { flag:"🇰🇪", name:"Kenya", capital:"Nairobi", region:"Africa", language:"Swahili, English", currency:"Kenyan Shilling (KES)", attractions:"Maasai Mara, Mount Kenya, Amboseli National Park, Diani Beach, Lamu Old Town", food:"Nyama Choma, Ugali, Sukuma Wiki, Samosa, Chai", tags:["Great Migration","Maasai culture"] },
+  { flag:"🇲🇦", name:"Morocco", capital:"Rabat", region:"Africa", language:"Arabic, Berber, French", currency:"Dirham (MAD)", attractions:"Marrakech Medina, Fes El Bali, Sahara Desert, Hassan II Mosque, Chefchaouen (Blue City)", food:"Tagine, Couscous, Pastilla, Harira, Mint Tea", tags:["Imperial cities","Sahara gateway"] },
+  { flag:"🇬🇭", name:"Ghana", capital:"Accra", region:"Africa", language:"English", currency:"Cedi (GHS)", attractions:"Cape Coast Castle, Kakum National Park, Mole National Park, Labadi Beach, Elmina Castle", food:"Jollof Rice, Fufu, Banku, Kelewele, Groundnut Soup", tags:["First sub-Saharan independent","Gold Coast history"] },
+  { flag:"🇹🇿", name:"Tanzania", capital:"Dodoma", region:"Africa", language:"Swahili, English", currency:"Tanzanian Shilling (TZS)", attractions:"Mount Kilimanjaro, Serengeti National Park, Zanzibar, Ngorongoro Crater, Selous Game Reserve", food:"Ugali, Pilau, Zanzibar Pizza, Mishkaki, Mchuzi wa Samaki", tags:["Kilimanjaro — Africa's highest peak","Zanzibar spice islands"] },
+  { flag:"🇸🇳", name:"Senegal", capital:"Dakar", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Goree Island, Pink Lake (Lac Rose), Casamance, Dakar markets, Djoudj National Bird Sanctuary", food:"Thiéboudienne, Yassa, Mafé, Accara, Thiakry", tags:["Teranga (hospitality)","Wrestling culture"] },
+  { flag:"🇺🇬", name:"Uganda", capital:"Kampala", region:"Africa", language:"English, Swahili", currency:"Ugandan Shilling (UGX)", attractions:"Bwindi Impenetrable Forest (mountain gorillas), Murchison Falls, Lake Victoria, Queen Elizabeth Park", food:"Matoke, Rolex (egg chapati roll), Groundnut Stew, Posho, Mandazi", tags:["Pearl of Africa","Mountain gorilla trekking"] },
+  { flag:"🇨🇲", name:"Cameroon", capital:"Yaoundé", region:"Africa", language:"French, English", currency:"Central African CFA Franc (XAF)", attractions:"Mount Cameroon, Waza National Park, Kribi Beaches, Limbe Botanical Garden, Foumban Palace", food:"Ndolé, Eru, Jollof Rice, Puff Puff, Pepper Soup", tags:["Africa in miniature","Bilingual nation"] },
+  { flag:"🇨🇮", name:"Côte d'Ivoire", capital:"Yamoussoukro", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Basilica of Our Lady of Peace, Taï National Park, Man region waterfalls, Abidjan city life", food:"Aloko (fried plantain), Attiéké, Garba, Futu, Kedjenou", tags:["World's top cocoa producer","Economic hub"] },
+  { flag:"🇿🇲", name:"Zambia", capital:"Lusaka", region:"Africa", language:"English", currency:"Zambian Kwacha (ZMW)", attractions:"Victoria Falls (Mosi-oa-Tunya), South Luangwa, Lower Zambezi, Kafue National Park", food:"Nshima, Ifisashi, Kapenta, Chikanda, Chibuku", tags:["Victoria Falls shared with Zimbabwe","Copper Belt"] },
+  { flag:"🇿🇼", name:"Zimbabwe", capital:"Harare", region:"Africa", language:"16 official languages", currency:"Zimbabwe Gold (ZiG)", attractions:"Victoria Falls, Great Zimbabwe Ruins, Hwange National Park, Matobo Hills, Mana Pools", food:"Sadza, Muriwo unedovi, Nyama, Maheu, Mopane worms", tags:["Great Zimbabwe ruins","Victoria Falls"] },
+  { flag:"🇦🇴", name:"Angola", capital:"Luanda", region:"Africa", language:"Portuguese", currency:"Kwanza (AOA)", attractions:"Kalandula Falls, Kissama National Park, Tundavala Gap, Black Rocks (Pungo Andongo), Luanda Bay", food:"Muamba de Galinha, Calulu, Funge, Moamba, Cocada Amarela", tags:["Oil-rich nation","Portuguese colonial heritage"] },
+  { flag:"🇲🇿", name:"Mozambique", capital:"Maputo", region:"Africa", language:"Portuguese", currency:"Metical (MZN)", attractions:"Bazaruto Archipelago, Gorongosa National Park, Maputo old town, Ilha de Mozambique", food:"Piri Piri Prawns, Matapa, Pão (Portuguese bread), Rissoles, Galinha à Zambeziana", tags:["Indian Ocean coastline","Portuguese East Africa"] },
+  { flag:"🇲🇬", name:"Madagascar", capital:"Antananarivo", region:"Africa", language:"Malagasy, French", currency:"Ariary (MGA)", attractions:"Avenue of the Baobabs, Tsingy de Bemaraha, Ranomafana National Park, Nosy Be island", food:"Romazava, Ravitoto, Mofo gasy, Lasopy, Vary amin'anana", tags:["World's 4th largest island","90% endemic species"] },
+  { flag:"🇷🇼", name:"Rwanda", capital:"Kigali", region:"Africa", language:"Kinyarwanda, French, English", currency:"Rwandan Franc (RWF)", attractions:"Volcanoes National Park, Nyungwe Forest, Lake Kivu, Kigali Genocide Memorial, Akagera", food:"Isombe, Ugali, Brochettes, Ibihaza, Ikivuguto (yogurt)", tags:["Land of a thousand hills","Gorilla trekking"] },
+  { flag:"🇲🇱", name:"Mali", capital:"Bamako", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Djenné Mosque, Timbuktu, Dogon Country, Niger River, Bamako Grand Marché", food:"Tô, Jollof Rice, Capitaine fish, Tigadèguèna, Fonio", tags:["Ancient Malian Empire","Timbuktu — city of gold"] },
+  { flag:"🇳🇪", name:"Niger", capital:"Niamey", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Air and Ténéré Natural Reserves, W National Park, Agadez Grand Mosque, Zinder old city", food:"Tuwo, Dambu Nama, Koko, Miyan Kuka, Fura da Nono", tags:["Sahara Desert nation","Agadez ancient caravan city"] },
+  { flag:"🇧🇫", name:"Burkina Faso", capital:"Ouagadougou", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Arli National Park, Sindou Peaks, Ruins of Loropéni, Tiébélé Royal Courtyard", food:"Tô, Riz Gras, Brochettes, Haricots, Dolo (sorghum beer)", tags:["FESPACO film festival","Land of the upright people"] },
+  { flag:"🇸🇩", name:"Sudan", capital:"Khartoum", region:"Africa", language:"Arabic, English", currency:"Sudanese Pound (SDG)", attractions:"Meroe Pyramids, Dinder National Park, Omdurman market, Nubian desert, Suakin old port", food:"Ful Medames, Kissra, Mullah, Gurasa, Asida", tags:["More pyramids than Egypt","Ancient Nubian civilization"] },
+  { flag:"🇩🇿", name:"Algeria", capital:"Algiers", region:"Africa", language:"Arabic, Berber", currency:"Algerian Dinar (DZD)", attractions:"Sahara Dunes (Tassili n'Ajjer), Algiers Casbah, Roman ruins of Djémila, Bejaia coast", food:"Couscous, Chorba, Makroud, Merguez, Chakhchoukha", tags:["Africa's largest country","Roman ruins & Sahara"] },
+  { flag:"🇱🇾", name:"Libya", capital:"Tripoli", region:"Africa", language:"Arabic", currency:"Libyan Dinar (LYD)", attractions:"Leptis Magna (Roman ruins), Sabratha Theatre, Ghadames Old City, Akakus rock art", food:"Bazeen, Asida, Mbakbaka, Sharba Libiya, Usban", tags:["Ancient Roman heritage","Sahara & Mediterranean"] },
+  { flag:"🇹🇳", name:"Tunisia", capital:"Tunis", region:"Africa", language:"Arabic", currency:"Tunisian Dinar (TND)", attractions:"Carthage ruins, Djerba Island, Sahara at Douz, Medina of Tunis, Sidi Bou Said", food:"Brik, Couscous, Lablabi, Harissa, Makroudh", tags:["Star Wars filming locations","Carthage ruins"] },
+  { flag:"🇨🇩", name:"DR Congo", capital:"Kinshasa", region:"Africa", language:"French", currency:"Congolese Franc (CDF)", attractions:"Virunga National Park, Congo River, Okapi Wildlife Reserve, Boyoma Falls", food:"Moambe Chicken, Fufu, Pondu (cassava leaves), Liboke, Makemba", tags:["Africa's 2nd largest country","Congo rainforest"] },
+  { flag:"🇨🇬", name:"Republic of Congo", capital:"Brazzaville", region:"Africa", language:"French", currency:"Central African CFA Franc (XAF)", attractions:"Odzala-Kokoua National Park, Loufoulakari Falls, Brazzaville Cathedral, Congo River", food:"Saka-Saka, Ntaba, Makemba, Moambe, Chikwanga", tags:["Congo River twin cities","Lowland gorilla habitat"] },
+  { flag:"🇬🇦", name:"Gabon", capital:"Libreville", region:"Africa", language:"French", currency:"Central African CFA Franc (XAF)", attractions:"Lopé National Park, Langoué Bai, Pongara National Park, Crystal Mountains, Libreville beaches", food:"Nyembwe Chicken, Saka-Saka, Plantain, Manioc, Poisson Braisé", tags:["80% rainforest cover","Oil & forest nation"] },
+  { flag:"🇧🇯", name:"Benin", capital:"Porto-Novo", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Pendjari National Park, Royal Palaces of Abomey, Ganvié lake village, Ouidah Slave Route", food:"Akassa, Ablo, Wagasi, Amiwo, Dégué", tags:["Birthplace of Vodou","Slave trade history"] },
+  { flag:"🇹🇬", name:"Togo", capital:"Lomé", region:"Africa", language:"French", currency:"West African CFA Franc (XOF)", attractions:"Fazao-Malfakassa National Park, Koutammakou landscape, Lomé Grand Market, Togoville", food:"Fufu, Akume, Gboma Dessi, Akpan, Tô", tags:["Koutammakou UNESCO site","Lomé coastal capital"] },
+  { flag:"🇨🇻", name:"Cape Verde", capital:"Praia", region:"Africa", language:"Portuguese", currency:"Cape Verdean Escudo (CVE)", attractions:"Fogo Volcano, Sal Island beaches, Mindelo city, Ribeira Grande (Santiago), Santo Antão hiking", food:"Cachupa, Caldo de Peixe, Catchupa Rica, Grogue (rum), Pastel com diablo dentro", tags:["Atlantic island archipelago","Morna music culture"] },
+  { flag:"🇬🇳", name:"Guinea", capital:"Conakry", region:"Africa", language:"French", currency:"Guinean Franc (GNF)", attractions:"Fouta Djallon highlands, Bossou Hills, Conakry beaches, Mount Nimba", food:"Riz Gras, Sauce Arachide, Fouti, Tiga Dèguèna, Thiakry", tags:["Water tower of West Africa","Bauxite deposits"] },
+  { flag:"🇸🇱", name:"Sierra Leone", capital:"Freetown", region:"Africa", language:"English", currency:"Leone (SLE)", attractions:"Outamba-Kilimi National Park, Bunce Island, Tiwai Island, Banana Islands, River No. 2 Beach", food:"Jollof Rice, Cassava Leaves, Groundnut Soup, Akara, Fried Plantain", tags:["Diamond heritage","Freetown Peninsula beaches"] },
+  { flag:"🇱🇷", name:"Liberia", capital:"Monrovia", region:"Africa", language:"English", currency:"Liberian Dollar (LRD)", attractions:"Sapo National Park, Lake Piso, Robertsport surfing, Providence Island, Marshall beach", food:"Jollof Rice, Fufu, Palm Butter Soup, Dumboy, Fried Plantain", tags:["Founded by freed slaves","Africa's oldest republic"] },
+  { flag:"🇸🇴", name:"Somalia", capital:"Mogadishu", region:"Africa", language:"Somali, Arabic", currency:"Somali Shilling (SOS)", attractions:"Laas Geel cave paintings, Mogadishu beaches, Hafun Peninsula, Zeila old port", food:"Canjeero, Bariis iskukaris, Hilib Ari (goat meat), Cambuulo, Xalwo (halva)", tags:["Longest coastline in Africa","Ancient frankincense trade"] },
+
+  // ASIA (49)
+  { flag:"🇨🇳", name:"China", capital:"Beijing", region:"Asia", language:"Mandarin Chinese", currency:"Renminbi / Yuan (CNY)", attractions:"Great Wall, Forbidden City, Terracotta Warriors, Li River, Yellow Mountains (Huangshan), West Lake", food:"Peking Duck, Dim Sum, Hot Pot, Dumplings (Jiaozi), Mapo Tofu, Xiaolongbao", tags:["World's oldest continuous civilization","World's most populous country"] },
+  { flag:"🇮🇳", name:"India", capital:"New Delhi", region:"Asia", language:"Hindi, English + 22 official languages", currency:"Rupee (INR)", attractions:"Taj Mahal, Jaipur (Pink City), Kerala Backwaters, Varanasi Ghats, Goa beaches, Himalayas, Mysore Palace", food:"Biryani, Butter Chicken, Dosas, Samosas, Chaat, Dal Makhani, Gulab Jamun", tags:["World's largest democracy","Diverse cultures & cuisines"] },
+  { flag:"🇯🇵", name:"Japan", capital:"Tokyo", region:"Asia", language:"Japanese", currency:"Yen (JPY)", attractions:"Mount Fuji, Kyoto temples (Fushimi Inari), Tokyo Shibuya, Nara deer park, Hiroshima Peace Memorial, Osaka Castle", food:"Sushi, Ramen, Tempura, Tonkatsu, Miso Soup, Yakitori, Matcha desserts", tags:["Land of the Rising Sun","Anime & manga capital"] },
+  { flag:"🇰🇷", name:"South Korea", capital:"Seoul", region:"Asia", language:"Korean", currency:"Won (KRW)", attractions:"Gyeongbokgung Palace, Jeju Island, Bukchon Hanok Village, DMZ, Seoraksan National Park, Busan beaches", food:"Bibimbap, Kimchi, Korean BBQ (Bulgogi), Tteokbokki, Japchae, Samgyeopsal", tags:["K-Pop & K-Drama hallyu","Technology powerhouse"] },
+  { flag:"🇮🇩", name:"Indonesia", capital:"Jakarta", region:"Asia", language:"Indonesian (Bahasa)", currency:"Rupiah (IDR)", attractions:"Bali temples, Borobudur, Komodo Island, Raja Ampat, Ubud rice terraces, Mount Bromo", food:"Nasi Goreng, Rendang, Satay, Gado-Gado, Soto, Tempeh, Nasi Padang", tags:["World's largest archipelago","Komodo dragons"] },
+  { flag:"🇵🇭", name:"Philippines", capital:"Manila", region:"Asia", language:"Filipino, English", currency:"Philippine Peso (PHP)", attractions:"Palawan (El Nido), Chocolate Hills (Bohol), Mayon Volcano, Intramuros Manila, Batad Rice Terraces", food:"Adobo, Sinigang, Lechon, Kare-Kare, Halo-Halo, Sisig, Balut", tags:["7,641 island archipelago","Pacific Ring of Fire"] },
+  { flag:"🇻🇳", name:"Vietnam", capital:"Hanoi", region:"Asia", language:"Vietnamese", currency:"Dong (VND)", attractions:"Ha Long Bay, Hoi An Ancient Town, Phong Nha Caves, Hue Imperial City, Sapa rice terraces, Mekong Delta", food:"Pho, Banh Mi, Bun Bo Hue, Cao Lau, Banh Xeo, Spring Rolls, Che", tags:["Ha Long Bay — natural wonder","War history & resilience"] },
+  { flag:"🇹🇭", name:"Thailand", capital:"Bangkok", region:"Asia", language:"Thai", currency:"Baht (THB)", attractions:"Wat Phra Kaew (Emerald Buddha), Chiang Mai temples, Phi Phi Islands, Ayutthaya ruins, Floating Markets", food:"Pad Thai, Tom Yum, Green Curry, Mango Sticky Rice, Som Tum, Massaman Curry", tags:["Land of Smiles","Full Moon Party Koh Phangan"] },
+  { flag:"🇲🇾", name:"Malaysia", capital:"Kuala Lumpur", region:"Asia", language:"Malay", currency:"Ringgit (MYR)", attractions:"Petronas Towers, Batu Caves, Langkawi Island, Kinabalu National Park, Georgetown Penang", food:"Nasi Lemak, Char Kway Teow, Laksa, Roti Canai, Satay, Rendang", tags:["Petronas Twin Towers","Rainforest biodiversity"] },
+  { flag:"🇸🇬", name:"Singapore", capital:"Singapore", region:"Asia", language:"English, Malay, Tamil, Mandarin", currency:"Singapore Dollar (SGD)", attractions:"Gardens by the Bay, Marina Bay Sands, Sentosa Island, Chinatown, Little India, Universal Studios", food:"Hainanese Chicken Rice, Chilli Crab, Laksa, Char Kway Teow, Satay, Kaya Toast", tags:["City-state","Garden City of the world"] },
+  { flag:"🇲🇲", name:"Myanmar", capital:"Naypyidaw", region:"Asia", language:"Burmese", currency:"Kyat (MMK)", attractions:"Bagan temples, Inle Lake, Mandalay Palace, Shwedagon Pagoda, Hpa-An caves", food:"Mohinga (fish noodle soup), Shan noodles, Laphet Thoke, Htamin Jin, Ohno Khao Swè", tags:["Land of golden pagodas","Thousands of ancient temples at Bagan"] },
+  { flag:"🇰🇭", name:"Cambodia", capital:"Phnom Penh", region:"Asia", language:"Khmer", currency:"Riel (KHR)", attractions:"Angkor Wat, Tonle Sap Lake, Royal Palace Phnom Penh, Killing Fields, Sihanoukville beaches", food:"Amok (fish curry), Lok Lak, Bai Sach Chrouk, Num Banh Chok, Kuy Teav", tags:["Angkor Wat — largest religious monument","Khmer civilization"] },
+  { flag:"🇱🇦", name:"Laos", capital:"Vientiane", region:"Asia", language:"Lao", currency:"Kip (LAK)", attractions:"Luang Prabang (UNESCO city), Plain of Jars, Vang Vieng, Kuang Si Falls, Si Phan Don (4000 Islands)", food:"Laap, Sticky Rice, Khao Piak Sen, Tam Mak Hoong, Mok Pa", tags:["Land of a million elephants","Slowest pace in Southeast Asia"] },
+  { flag:"🇧🇩", name:"Bangladesh", capital:"Dhaka", region:"Asia", language:"Bengali", currency:"Taka (BDT)", attractions:"Sundarbans Mangrove Forest, Cox's Bazar (longest natural beach), Lalbagh Fort, Paharpur Monastery", food:"Hilsa fish curry, Biryani, Panta Bhat, Shemai, Mishti Doi, Shorshe Ilish", tags:["World's longest natural sea beach","Sundarbans — mangrove forest"] },
+  { flag:"🇵🇰", name:"Pakistan", capital:"Islamabad", region:"Asia", language:"Urdu, English", currency:"Pakistani Rupee (PKR)", attractions:"Badshahi Mosque, Lahore Fort, K2 (world's 2nd highest peak), Mohenjo-Daro, Lahore Old City, Hunza Valley", food:"Biryani, Nihari, Haleem, Karahi, Seekh Kebab, Sajji, Chapli Kebab", tags:["K2 summit","Indus Valley Civilization"] },
+  { flag:"🇳🇵", name:"Nepal", capital:"Kathmandu", region:"Asia", language:"Nepali", currency:"Nepalese Rupee (NPR)", attractions:"Everest Base Camp, Pashupatinath Temple, Pokhara lakes, Chitwan National Park, Lumbini (Buddha's birthplace)", food:"Dal Bhat, Momos (dumplings), Sel Roti, Dhido, Chhang (barley drink)", tags:["8 of world's 10 highest peaks","Birthplace of Buddha"] },
+  { flag:"🇱🇰", name:"Sri Lanka", capital:"Sri Jayawardenepura Kotte / Colombo", region:"Asia", language:"Sinhala, Tamil", currency:"Rupee (LKR)", attractions:"Sigiriya Rock Fortress, Temple of the Tooth, Yala National Park, Mirissa whale watching, Ella highlands", food:"Rice & Curry, Kottu Roti, Hoppers (Appam), String Hoppers, Fish Ambul Thiyal, Pol Sambol", tags:["Pearl of the Indian Ocean","Ancient Buddhist heritage"] },
+  { flag:"🇦🇫", name:"Afghanistan", capital:"Kabul", region:"Asia", language:"Dari, Pashto", currency:"Afghani (AFN)", attractions:"Band-e-Amir National Park, Minaret of Jam, Buddhas of Bamiyan site, Khyber Pass, Kabul bazaars", food:"Kabuli Pulao, Mantu (dumplings), Bolani, Shorwa, Qabili Palau", tags:["Silk Road crossroads","Stunning mountain landscapes"] },
+  { flag:"🇲🇳", name:"Mongolia", capital:"Ulaanbaatar", region:"Asia", language:"Mongolian", currency:"Tögrög (MNT)", attractions:"Gobi Desert, Khuvsgul Lake, Hustai National Park (wild horses), Genghis Khan Statue, Orkhon Valley", food:"Khuushuur, Buuz (steamed dumplings), Tsuivan, Airag (fermented mare's milk), Suutei Tsai (salty milk tea)", tags:["Nomadic culture","Vast steppes & Gobi Desert"] },
+  { flag:"🇰🇿", name:"Kazakhstan", capital:"Astana", region:"Asia", language:"Kazakh, Russian", currency:"Tenge (KZT)", attractions:"Charyn Canyon, Burabay National Park, Almaty city, Baikonur Cosmodrome, Altyn-Emel National Park", food:"Beshbarmak, Kazy (horse sausage), Shubat, Baursak, Plov", tags:["World's largest landlocked country","First space launch site — Baikonur"] },
+  { flag:"🇺🇿", name:"Uzbekistan", capital:"Tashkent", region:"Asia", language:"Uzbek", currency:"Som (UZS)", attractions:"Registan Square (Samarkand), Bukhara old city, Khiva walled city, Tashkent metro, Aral Sea", food:"Plov (Uzbek rice dish), Samsa, Lagman, Shashlik, Manti, Non bread", tags:["Silk Road heart","Registan — jewel of Silk Road"] },
+  { flag:"🇹🇯", name:"Tajikistan", capital:"Dushanbe", region:"Asia", language:"Tajik", currency:"Somoni (TJS)", attractions:"Pamir Mountains (Roof of the World), Iskanderkul Lake, Wakhan Corridor, Fann Mountains, Dushanbe bazaars", food:"Plov, Qurut (dried cheese), Sambusa, Shashlik, Shirchoy (milk tea)", tags:["Pamir Mountains — Roof of the World","Ancient Persian heritage"] },
+  { flag:"🇰🇬", name:"Kyrgyzstan", capital:"Bishkek", region:"Asia", language:"Kyrgyz, Russian", currency:"Som (KGS)", attractions:"Issyk-Kul Lake, Ala Archa National Park, Song Kol Lake, Tash Rabat caravanserai, Bishkek", food:"Beshbarmak, Kumiss (fermented mare's milk), Laghman, Shorpo, Boorsok", tags:["Nomadic yurt culture","Tian Shan mountain range"] },
+  { flag:"🇹🇲", name:"Turkmenistan", capital:"Ashgabat", region:"Asia", language:"Turkmen", currency:"Manat (TMT)", attractions:"Darvaza Gas Crater ('Door to Hell'), Ancient Merv, Nisa ruins, Köw Ata Underground Lake, Ashgabat white marble city", food:"Plov, Shashlik, Manty, Gutap, Çal (camel's milk)", tags:["Door to Hell — natural gas crater","Ashgabat — all-white marble city"] },
+  { flag:"🇦🇿", name:"Azerbaijan", capital:"Baku", region:"Asia", language:"Azerbaijani", currency:"Manat (AZN)", attractions:"Old City Baku (Icherisheher), Gobustan National Park, Flame Towers, Mud Volcanoes, Sheki Khans Palace", food:"Plov, Dolma, Düşbərə, Qutab, Shah Plov, Baklava", tags:["Land of Fire","Oil boom on Caspian Sea"] },
+  { flag:"🇬🇪", name:"Georgia", capital:"Tbilisi", region:"Asia", language:"Georgian", currency:"Lari (GEL)", attractions:"Old Tbilisi, Kazbegi mountains (Gergeti Trinity Church), Vardzia cave monastery, Sighnaghi wine region", food:"Khachapuri, Khinkali, Pkhali, Churchkhela, Badrijani Nigvzit", tags:["Birthplace of wine","Ancient Caucasian nation"] },
+  { flag:"🇦🇲", name:"Armenia", capital:"Yerevan", region:"Asia", language:"Armenian", currency:"Dram (AMD)", attractions:"Geghard Monastery, Lake Sevan, Tatev Monastery, Garni Temple, Yerevan Cascade", food:"Khorovats (BBQ), Dolma, Manti, Ghapama, Lavash bread", tags:["First Christian nation (301 AD)","Mount Ararat backdrop"] },
+  { flag:"🇧🇹", name:"Bhutan", capital:"Thimphu", region:"Asia", language:"Dzongkha", currency:"Ngultrum (BTN)", attractions:"Tiger's Nest Monastery (Paro Taktsang), Thimphu Dzong, Punakha Dzong, Dochula Pass, Phobjikha Valley", food:"Ema Datshi (chili & cheese), Red rice, Jasha Maru, Phaksha Paa, Ara (local spirit)", tags:["Gross National Happiness","Carbon negative country"] },
+  { flag:"🇲🇻", name:"Maldives", capital:"Malé", region:"Asia", language:"Dhivehi", currency:"Rufiyaa (MVR)", attractions:"Overwater bungalows, Coral reefs snorkeling & diving, Male Friday Mosque, Banana Reef, Biosphere Reserve", food:"Garudhiya (tuna soup), Mas Huni, Roshi (flatbread), Bis Keemiya, Rihaakuru", tags:["Lowest-lying nation on Earth","World's top luxury dive destination"] },
+  { flag:"🇹🇱", name:"Timor-Leste", capital:"Dili", region:"Asia", language:"Tetum, Portuguese", currency:"US Dollar (USD)", attractions:"Cristo Rei of Dili, Jaco Island, Mount Ramelau, Tasi Tolu lake, Atauro Island diving", food:"Batar Daan, Ikan pepes, Tukir, Saboko, Tapai", tags:["World's newest nation (2002)","Portuguese colonial heritage"] },
+  { flag:"🇧🇳", name:"Brunei", capital:"Bandar Seri Begawan", region:"Asia", language:"Malay", currency:"Brunei Dollar (BND)", attractions:"Omar Ali Saifuddien Mosque, Kampong Ayer (water village), Ulu Temburong National Park, Royal Regalia Museum", food:"Ambuyat, Nasi Katok, Kelupis, Otah-otah, Kuih", tags:["Sultan's Brunei — oil-rich sultanate","Water village on Brunei River"] },
+  { flag:"🇰🇵", name:"North Korea", capital:"Pyongyang", region:"Asia", language:"Korean", currency:"North Korean Won (KPW)", attractions:"Paektu Mountain, Ryugyong Hotel, Juche Tower, Kaesong historic monuments, Diamond Mountains (Kumgangsan)", food:"Naengmyeon (cold noodles), Pyongyang Raengmyŏn, Sinsollo, Dogogi, Dubu Kimchi", tags:["Most isolated nation","Mount Paektu sacred volcano"] },
+  { flag:"🇹🇼", name:"Taiwan", capital:"Taipei", region:"Asia", language:"Mandarin Chinese", currency:"New Taiwan Dollar (TWD)", attractions:"Taipei 101, Taroko Gorge, Sun Moon Lake, Jiufen old street, Alishan forest, Yehliu Geopark", food:"Beef Noodle Soup, Xiaolongbao, Oyster Omelet, Stinky Tofu, Bubble Tea, Lu Rou Fan", tags:["Night market food paradise","Semiconductor technology hub"] },
+
+  // EUROPE (44)
+  { flag:"🇫🇷", name:"France", capital:"Paris", region:"Europe", language:"French", currency:"Euro (EUR)", attractions:"Eiffel Tower, Louvre Museum, Palace of Versailles, French Riviera (Côte d'Azur), Mont Saint-Michel, Loire Valley castles", food:"Croissants, Escargots, Coq au Vin, Crème Brûlée, Ratatouille, Baguette, Macarons", tags:["Most visited country in the world","World capital of fashion & cuisine"] },
+  { flag:"🇮🇹", name:"Italy", capital:"Rome", region:"Europe", language:"Italian", currency:"Euro (EUR)", attractions:"Colosseum, Sistine Chapel Vatican, Venice canals, Amalfi Coast, Tuscany, Cinque Terre, Pompeii", food:"Pizza Napoletana, Pasta (Carbonara, Cacio e Pepe, Bolognese), Gelato, Tiramisu, Risotto, Espresso", tags:["Renaissance art & culture","Birthplace of the Roman Empire"] },
+  { flag:"🇩🇪", name:"Germany", capital:"Berlin", region:"Europe", language:"German", currency:"Euro (EUR)", attractions:"Neuschwanstein Castle, Brandenburg Gate, Black Forest, Cologne Cathedral, Bavarian Alps, Romantic Road", food:"Bratwurst, Pretzels, Schnitzel, Sauerbraten, Sauerkraut, Black Forest Cake, Beer (Oktoberfest)", tags:["Oktoberfest","Engineering & automotive excellence"] },
+  { flag:"🇪🇸", name:"Spain", capital:"Madrid", region:"Europe", language:"Spanish", currency:"Euro (EUR)", attractions:"Sagrada Família, Alhambra Palace, Park Güell, Prado Museum, Running of Bulls Pamplona, San Sebastián", food:"Paella, Tapas, Jamón Ibérico, Gazpacho, Tortilla Española, Churros, Sangria", tags:["Flamenco dance & culture","Football (Real Madrid & Barcelona)"] },
+  { flag:"🇬🇧", name:"United Kingdom", capital:"London", region:"Europe", language:"English", currency:"Pound Sterling (GBP)", attractions:"Big Ben & Houses of Parliament, Buckingham Palace, Stonehenge, Scottish Highlands, Lake District, Edinburgh Castle", food:"Fish & Chips, Full English Breakfast, Roast Beef & Yorkshire Pudding, Shepherd's Pie, Scones, Afternoon Tea", tags:["Constitutional monarchy","Shakespeare & Beatles birthplace"] },
+  { flag:"🇵🇹", name:"Portugal", capital:"Lisbon", region:"Europe", language:"Portuguese", currency:"Euro (EUR)", attractions:"Tower of Belém, Pena Palace (Sintra), Algarve cliffs, Porto wine caves, Douro Valley, Madeira island", food:"Bacalhau (salted cod), Pastéis de Nata, Bifanas, Cataplana, Caldo Verde, Francesinha", tags:["Age of Exploration heritage","Fado music tradition"] },
+  { flag:"🇳🇱", name:"Netherlands", capital:"Amsterdam", region:"Europe", language:"Dutch", currency:"Euro (EUR)", attractions:"Rijksmuseum, Anne Frank House, Keukenhof tulip gardens, Windmills of Kinderdijk, Van Gogh Museum, Delft", food:"Stroopwafel, Bitterballen, Herring (Haring), Dutch Pancakes, Gouda & Edam cheeses, Poffertjes", tags:["Tulips & windmills","Cycling nation"] },
+  { flag:"🇧🇪", name:"Belgium", capital:"Brussels", region:"Europe", language:"French, Dutch (Flemish), German", currency:"Euro (EUR)", attractions:"Grand Place Brussels, Bruges canals, Ghent waterways, Battlefield of Waterloo, Ardennes forest", food:"Belgian Waffles, Frites (fries), Moules-Frites, Belgian Chocolate, Speculoos, Belgian Beer", tags:["World capital of chocolate & beer","NATO & EU headquarters"] },
+  { flag:"🇦🇹", name:"Austria", capital:"Vienna", region:"Europe", language:"German", currency:"Euro (EUR)", attractions:"Schönbrunn Palace, Hallstatt village, Vienna Opera House, Salzburg old city, Innsbruck Alps, Kunsthistorisches Museum", food:"Wiener Schnitzel, Apfelstrudel, Sachertorte, Kaiserschmarrn, Tafelspitz, Melange (coffee)", tags:["Classical music capital","Mozart & Beethoven heritage"] },
+  { flag:"🇨🇭", name:"Switzerland", capital:"Bern", region:"Europe", language:"German, French, Italian, Romansh", currency:"Swiss Franc (CHF)", attractions:"Matterhorn, Jungfraujoch, Lucerne Chapel Bridge, Lake Geneva, Zermatt, Rhine Falls", food:"Fondue, Raclette, Rösti, Swiss Chocolate, Müesli, Zürcher Geschnetzeltes", tags:["Watches & banking","Alpine skiing mecca"] },
+  { flag:"🇸🇪", name:"Sweden", capital:"Stockholm", region:"Europe", language:"Swedish", currency:"Swedish Krona (SEK)", attractions:"Gamla Stan (Old Town Stockholm), ABBA Museum, Northern Lights in Lapland, Vasa Museum ship, Gothenburg", food:"Meatballs (Köttbullar), Gravlax, Smörgåsbord, Cinnamon Buns (Kanelbullar), Surströmming, Princess Cake", tags:["IKEA & ABBA homeland","Nobel Prize ceremony"] },
+  { flag:"🇳🇴", name:"Norway", capital:"Oslo", region:"Europe", language:"Norwegian", currency:"Norwegian Krone (NOK)", attractions:"Fjords (Sognefjord, Geirangerfjord), Northern Lights, Viking Ship Museum Oslo, Bergen Bryggen, Lofoten Islands", food:"Salmon, Lutefisk, Rakfisk, Lefse, Brunost (brown cheese), Rømmegrøt, Fårikål", tags:["Land of fjords","Northern Lights viewing"] },
+  { flag:"🇩🇰", name:"Denmark", capital:"Copenhagen", region:"Europe", language:"Danish", currency:"Danish Krone (DKK)", attractions:"Tivoli Gardens, The Little Mermaid statue, Nyhavn colorful harbor, Legoland Billund, Kronborg Castle", food:"Smørrebrød (open sandwich), Frikadeller, Flæskesteg, Danish pastry (Wienerbrød), Aebleskiver", tags:["Happiest country surveys","Lego & Hans Christian Andersen"] },
+  { flag:"🇫🇮", name:"Finland", capital:"Helsinki", region:"Europe", language:"Finnish, Swedish", currency:"Euro (EUR)", attractions:"Helsinki Cathedral, Rovaniemi (Santa Claus village), Northern Lights, Saimaa Lake District, Turku Castle", food:"Reindeer (Poronkäristys), Kalakukko, Karjalanpiirakka, Salmiak (salty liquorice), Salmiakki", tags:["Land of a thousand lakes","Santa Claus home — Lapland"] },
+  { flag:"🇵🇱", name:"Poland", capital:"Warsaw", region:"Europe", language:"Polish", currency:"Złoty (PLN)", attractions:"Auschwitz Memorial, Kraków Old Town, Wawel Castle, Wieliczka Salt Mine, Warsaw Old Town, Tatra Mountains", food:"Pierogi, Bigos, Żurek, Kielbasa, Golabki, Oscypek, Sernik", tags:["Solidarity movement birthplace","Largest medieval castle at Malbork"] },
+  { flag:"🇨🇿", name:"Czech Republic", capital:"Prague", region:"Europe", language:"Czech", currency:"Czech Koruna (CZK)", attractions:"Prague Castle, Charles Bridge, Old Town Square (astronomical clock), Bohemian Switzerland, Český Krumlov", food:"Svíčková, Svíčková na smetaně, Trdelník, Goulash with Bread Dumplings, Smažený Sýr, Czech Pilsner beer", tags:["Most beautiful capital in Europe","Birthplace of Pilsner beer"] },
+  { flag:"🇭🇺", name:"Hungary", capital:"Budapest", region:"Europe", language:"Hungarian", currency:"Forint (HUF)", attractions:"Parliament Building, Buda Castle, Thermal Baths, Fisherman's Bastion, Lake Balaton, Széchenyi Bridge", food:"Goulash, Lángos, Paprikash, Dobos Cake, Kürtőskalács (chimney cake), Pálinka (brandy)", tags:["Thermal springs capital","Paprika cuisine"] },
+  { flag:"🇷🇴", name:"Romania", capital:"Bucharest", region:"Europe", language:"Romanian", currency:"Leu (RON)", attractions:"Bran Castle (Dracula's Castle), Transfăgărășan road, Painted monasteries of Bucovina, Sinaia, Sighișoara medieval city", food:"Sarmale, Mici (grilled minced meat rolls), Ciorba de Burta, Mamaliga, Cozonac, Palinca", tags:["Dracula's Castle legend","Carpathian Mountains"] },
+  { flag:"🇬🇷", name:"Greece", capital:"Athens", region:"Europe", language:"Greek", currency:"Euro (EUR)", attractions:"Acropolis & Parthenon, Santorini caldera, Meteora monasteries, Rhodes old town, Delphi, Mykonos", food:"Moussaka, Souvlaki, Gyros, Spanakopita, Feta cheese, Baklava, Tzatziki, Greek Salad", tags:["Birthplace of democracy","Olympic Games origin"] },
+  { flag:"🇧🇬", name:"Bulgaria", capital:"Sofia", region:"Europe", language:"Bulgarian", currency:"Lev (BGN)", attractions:"Rila Monastery, Plovdiv old town, Black Sea coast (Varna), Thracian Tomb of Kazanlak, Tsar Samuil's fortress", food:"Banitsa, Tarator, Kavarma, Shopska Salad, Lukanka sausage, Rakia (brandy)", tags:["Rila Monastery UNESCO site","Rose Valley — world's rose oil production"] },
+  { flag:"🇷🇸", name:"Serbia", capital:"Belgrade", region:"Europe", language:"Serbian", currency:"Dinar (RSD)", attractions:"Belgrade Fortress, Đavolja Varoš (Devil's Town), Novi Sad, Đerdap Gorge, Studenica Monastery", food:"Ćevapi, Pljeskavica, Ajvar, Sarma, Gibanica, Rakija", tags:["Exit Festival Novi Sad","Nikola Tesla's birthplace"] },
+  { flag:"🇭🇷", name:"Croatia", capital:"Zagreb", region:"Europe", language:"Croatian", currency:"Euro (EUR)", attractions:"Dubrovnik Old City (Game of Thrones), Plitvice Lakes National Park, Diocletian's Palace Split, Hvar Island", food:"Ćevapi, Peka (lamb under bell), Black Risotto (Crni Rižot), Štrukli, Soparnik, Prošek wine", tags:["Dubrovnik — Pearl of the Adriatic","Dalmatian Coast"] },
+  { flag:"🇸🇮", name:"Slovenia", capital:"Ljubljana", region:"Europe", language:"Slovenian", currency:"Euro (EUR)", attractions:"Lake Bled, Postojna Cave, Triglav National Park, Ljubljana Castle, Škocjan Caves", food:"Idrijski Žlikrofi, Potica, Kranjska Klobasa, Štruklji, Prekmurska Gibanica", tags:["Lake Bled — fairytale setting","Smallest country in Central Europe"] },
+  { flag:"🇧🇦", name:"Bosnia & Herzegovina", capital:"Sarajevo", region:"Europe", language:"Bosnian, Croatian, Serbian", currency:"Convertible Mark (BAM)", attractions:"Stari Most (Old Bridge, Mostar), Baščaršija bazaar, Sarajevo old city, Vrelo Bosne, Kravice waterfalls", food:"Ćevapi, Burek, Begova Čorba, Klepe, Baklava, Bosanski Lonac", tags:["Historic Sarajevo siege site","Ottoman Stari Most bridge"] },
+  { flag:"🇦🇱", name:"Albania", capital:"Tirana", region:"Europe", language:"Albanian", currency:"Lek (ALL)", attractions:"Butrint National Park, Berat castle, Albanian Riviera, Gjirokastër old town, Lake Ohrid, Kruja Castle", food:"Fërgesë, Tave Kosi, Byrek, Qofte, Tarator, Rakia", tags:["Hidden Balkan gem","Albanian Riviera"] },
+  { flag:"🇲🇰", name:"North Macedonia", capital:"Skopje", region:"Europe", language:"Macedonian, Albanian", currency:"Denar (MKD)", attractions:"Lake Ohrid, Skopje old bazaar, Matka Canyon, Ohrid old town, St. Panteleimon Monastery", food:"Tavče Gravče, Ajvar, Turli Tava, Pastrmajlija, Rakija, Meso na skara", tags:["Lake Ohrid UNESCO World Heritage","Birthplace of Alexander the Great"] },
+  { flag:"🇲🇪", name:"Montenegro", capital:"Podgorica", region:"Europe", language:"Montenegrin", currency:"Euro (EUR)", attractions:"Bay of Kotor, Durmitor National Park, Sveti Stefan island, Ostrog Monastery, Tara River Canyon", food:"Njeguški Pršut, Kačamak, Popara, Cicvara, Priganice, Rakija", tags:["Bay of Kotor — fjord-like bay","Black Mountain of Balkans"] },
+  { flag:"🇽🇰", name:"Kosovo", capital:"Pristina", region:"Europe", language:"Albanian, Serbian", currency:"Euro (EUR)", attractions:"Bear Sanctuary Mramor, Visoki Dečani Monastery, Sharr Mountains, Prizren old town, Germia Park", food:"Flija, Tavë me gjizë, Pite, Flia, Trahana, Kos (yogurt)", tags:["World's newest republic (2008)","Serbian medieval monasteries"] },
+  { flag:"🇮🇪", name:"Ireland", capital:"Dublin", region:"Europe", language:"English, Irish (Gaeilge)", currency:"Euro (EUR)", attractions:"Cliffs of Moher, Ring of Kerry, Dublin's Temple Bar, Giant's Causeway, Kilkenny Castle, Connemara", food:"Irish Stew, Full Irish Breakfast, Colcannon, Soda Bread, Boxty, Guinness, Smoked Salmon", tags:["Land of 40 shades of green","Celtic music & pub culture"] },
+  { flag:"🇮🇸", name:"Iceland", capital:"Reykjavik", region:"Europe", language:"Icelandic", currency:"Icelandic Króna (ISK)", attractions:"Northern Lights, Golden Circle (Geysir, Gullfoss, Þingvellir), Blue Lagoon, Vatnajökull glacier, Westfjords", food:"Skyr, Hákarl (fermented shark), Lamb Soup, Kleinur, Rúgbrauð, Brennivín (schnapps)", tags:["Land of Fire and Ice","Midnight Sun in summer"] },
+  { flag:"🇱🇻", name:"Latvia", capital:"Riga", region:"Europe", language:"Latvian", currency:"Euro (EUR)", attractions:"Riga Art Nouveau architecture, Gauja National Park, Jūrmala beach resort, Sigulda castle ruins, Rundale Palace", food:"Rye bread (Rupjmaize), Skābputra, Grey peas with bacon, Jāņu siers (caraway cheese), Riga Black Balsam", tags:["Art Nouveau capital of the world","Baltic Song Festival tradition"] },
+  { flag:"🇱🇹", name:"Lithuania", capital:"Vilnius", region:"Europe", language:"Lithuanian", currency:"Euro (EUR)", attractions:"Vilnius Old Town, Hill of Crosses, Trakai Island Castle, Curonian Spit, Kernavė archaeological site", food:"Cepelinai (potato dumplings), Šaltibarščiai (cold beet soup), Kibinai, Kugelis, Skilandis sausage", tags:["Hill of Crosses pilgrimage site","Last European nation to adopt Christianity"] },
+  { flag:"🇪🇪", name:"Estonia", capital:"Tallinn", region:"Europe", language:"Estonian", currency:"Euro (EUR)", attractions:"Tallinn Medieval Old Town, Lahemaa National Park, Saaremaa island, Tartu university city, Pärnu beach resort", food:"Verivorst (blood sausage), Mulgikapsad, Kama, Kohuke, Grilled Baltic herring, Kefir", tags:["Most digitally advanced country","e-Residency program pioneer"] },
+  { flag:"🇸🇰", name:"Slovakia", capital:"Bratislava", region:"Europe", language:"Slovak", currency:"Euro (EUR)", attractions:"Bratislava Castle, High Tatras mountains, Bojnice Castle, Slovak Paradise National Park, Spiš Castle", food:"Bryndzové halušky, Kapustnica, Šúľance, Lokše, Slivovica (plum brandy)", tags:["High Tatras — spectacular mountains","Spiš Castle — largest castle in Central Europe"] },
+  { flag:"🇧🇾", name:"Belarus", capital:"Minsk", region:"Europe", language:"Belarusian, Russian", currency:"Belarusian Ruble (BYN)", attractions:"Mir Castle, Nesvizh Castle, Białowieża Forest (European bison), Brest Fortress, Minsk city", food:"Draniki (potato pancakes), Kalduny, Zharenaya Kartoshka, Machanka, Kvas drink", tags:["Białowieża Forest — Europe's last primeval forest","European bison habitat"] },
+  { flag:"🇺🇦", name:"Ukraine", capital:"Kyiv", region:"Europe", language:"Ukrainian", currency:"Hryvnia (UAH)", attractions:"Saint Sophia Cathedral Kyiv, Kyiv Pechersk Lavra (Monastery of the Caves), Chernobyl Exclusion Zone, Lviv old town, Carpathian Mountains", food:"Borscht, Varenyky (dumplings), Chicken Kyiv, Holoubsti, Salo, Pampushky, Medivnyk", tags:["Largest country in Europe","Chernobyl nuclear history"] },
+  { flag:"🇲🇩", name:"Moldova", capital:"Chișinău", region:"Europe", language:"Romanian/Moldovan", currency:"Moldovan Leu (MDL)", attractions:"Cricova wine cellars (underground city!), Old Orhei monastery, Tipova cave monastery, Soroca Fortress", food:"Mămăligă, Plăcinte, Sarmale, Zeamă, Pastetă, Divin (cognac)", tags:["World's wine cellars underground","One of poorest EU-aspiring nations"] },
+  { flag:"🇱🇺", name:"Luxembourg", capital:"Luxembourg City", region:"Europe", language:"Luxembourgish, French, German", currency:"Euro (EUR)", attractions:"Luxembourg City fortifications (UNESCO), Vianden Castle, Moselle Valley, Bourscheid Castle, Müllerthal Trail", food:"Judd mat Gaardebounen, Bouneschlupp, Gromperekichelcher, Quetschentaart, Riesling wine", tags:["One of world's richest countries","Steel & finance hub"] },
+  { flag:"🇲🇨", name:"Monaco", capital:"Monaco-Ville", region:"Europe", language:"French", currency:"Euro (EUR)", attractions:"Monte Carlo Casino, Prince's Palace, Oceanographic Museum, Formula 1 Grand Prix circuit, Exotic Garden", food:"Barbajuans, Socca, Stocafi, Fougasse, Broufade, Fresh seafood", tags:["World's most densely populated","Formula 1 Monaco Grand Prix"] },
+  { flag:"🇱🇮", name:"Liechtenstein", capital:"Vaduz", region:"Europe", language:"German", currency:"Swiss Franc (CHF)", attractions:"Vaduz Castle, Gutenberg Castle ruins, Liechtenstein National Museum, Rhine Valley, Malbun ski resort", food:"Käsknöpfle, Ribel, Röteli (cherry schnapps), Sträubli, Hafalaab soup", tags:["One of world's two doubly landlocked countries","Tax haven monarchy"] },
+  { flag:"🇸🇲", name:"San Marino", capital:"San Marino City", region:"Europe", language:"Italian", currency:"Euro (EUR)", attractions:"Three Towers (Guaita, Cesta, Montale), Palazzo Pubblico, Borgo Maggiore market, Mount Titano", food:"Piadina, Fagioli con le Cotiche, Torta Tre Monti, Bustrengo, Sangiovese wine", tags:["World's oldest republic","Surrounded entirely by Italy"] },
+  { flag:"🇻🇦", name:"Vatican City", capital:"Vatican City", region:"Europe", language:"Italian, Latin", currency:"Euro (EUR)", attractions:"St. Peter's Basilica, Sistine Chapel (Michelangelo's ceiling), Vatican Museums, Swiss Guards, St. Peter's Square", food:"Roman cuisine, Supplì, Cacio e Pepe, Abbacchio, Papal audience events", tags:["World's smallest country","Center of Catholic faith"] },
+  { flag:"🇲🇹", name:"Malta", capital:"Valletta", region:"Europe", language:"Maltese, English", currency:"Euro (EUR)", attractions:"Valletta (UNESCO capital), Blue Grotto, Ggantija megalithic temples, Mdina silent city, Marsaxlokk fishing village", food:"Ftira, Rabbit Stew (Stuffat tal-Fenek), Pastizzi, Bigilla, Kinnie drink, Mqaret", tags:["Ancient megalithic temples — older than Stonehenge","Honey of the Mediterranean"] },
+  { flag:"🇨🇾", name:"Cyprus", capital:"Nicosia", region:"Europe", language:"Greek, Turkish", currency:"Euro (EUR)", attractions:"Aphrodite's Rock (Petra tou Romiou), Troodos Mountains, Kourion ancient theatre, Paphos Archaeological Park, Kyrenia", food:"Halloumi cheese, Meze, Souvlaki, Kleftiko (lamb), Loukoumades, Commandaria wine", tags:["Birthplace of Aphrodite","Divided island — Greek & Turkish sides"] },
+  { flag:"🇦🇩", name:"Andorra", capital:"Andorra la Vella", region:"Europe", language:"Catalan", currency:"Euro (EUR)", attractions:"Caldea spa, Grandvalira ski resort, Sant Joan de Caselles church, Madriu-Perafita-Claror Valley (UNESCO)", food:"Escudella, Trinxat, Cargolade (snails), Crema catalana, Pa amb tomàquet", tags:["Tax-free shopping destination","Pyrenean microstate"] },
+
+  // MIDDLE EAST (13)
+  { flag:"🇸🇦", name:"Saudi Arabia", capital:"Riyadh", region:"Middle East", language:"Arabic", currency:"Saudi Riyal (SAR)", attractions:"Mecca & Kaaba (holiest site in Islam), Medina, Hegra (Madain Salih), Al-Ula, Edge of the World, Diriyah", food:"Kabsa, Mandi, Jareesh, Saleeg, Mutabbaq, Dates & Arabic Coffee", tags:["Birthplace of Islam","NEOM mega-city project"] },
+  { flag:"🇦🇪", name:"United Arab Emirates", capital:"Abu Dhabi", region:"Middle East", language:"Arabic", currency:"UAE Dirham (AED)", attractions:"Burj Khalifa, Dubai Mall, Palm Jumeirah, Sheikh Zayed Grand Mosque, Dubai Frame, Louvre Abu Dhabi", food:"Machboos, Harees, Camel meat dishes, Luqaimat, Balaleet, Saffron Rice", tags:["Tallest building in the world — Burj Khalifa","Luxury travel destination"] },
+  { flag:"🇮🇱", name:"Israel", capital:"Jerusalem (disputed)", region:"Middle East", language:"Hebrew, Arabic", currency:"New Shekel (ILS)", attractions:"Western Wall (Jerusalem), Church of the Holy Sepulchre, Dead Sea, Masada, Tel Aviv beaches, Bahai Gardens Haifa", food:"Hummus, Falafel, Shakshuka, Sabich, Shakshuka, Knafeh, Shawarma, Israeli Salad", tags:["Holy Land for three religions","Dead Sea — lowest point on Earth"] },
+  { flag:"🇯🇴", name:"Jordan", capital:"Amman", region:"Middle East", language:"Arabic", currency:"Jordanian Dinar (JOD)", attractions:"Petra (Rose City), Wadi Rum desert, Dead Sea, Jerash Roman ruins, Aqaba Red Sea, Ajloun Castle", food:"Mansaf (lamb & yogurt), Maqluba, Falafel, Hummus, Kanafeh, Musakhan", tags:["Petra — New Wonder of the World","Dead Sea floating experience"] },
+  { flag:"🇮🇶", name:"Iraq", capital:"Baghdad", region:"Middle East", language:"Arabic, Kurdish", currency:"Iraqi Dinar (IQD)", attractions:"Ziggurat of Ur, Babylon ruins, Erbil Citadel, Marshes of Southern Iraq, Al-Askari Mosque Samarra", food:"Masgouf (grilled fish), Timman (rice), Dolma, Kubba, Biryani Iraqi style, Kleicha pastry", tags:["Mesopotamia — cradle of civilization","Babylon — ancient wonder"] },
+  { flag:"🇮🇷", name:"Iran", capital:"Tehran", region:"Middle East", language:"Persian (Farsi)", currency:"Rial (IRR)", attractions:"Persepolis ruins, Isfahan (Imam Square, Si-o-Se-Pol bridge), Yazd ancient city, Nasir al-Mulk (Pink Mosque), Golestan Palace", food:"Ghormeh Sabzi, Chelo Kebab, Tahdig (crispy rice), Fesenjan, Ash-e Reshteh, Persian Saffron Ice Cream", tags:["Ancient Persian Empire","Stunning Islamic architecture"] },
+  { flag:"🇸🇾", name:"Syria", capital:"Damascus", region:"Middle East", language:"Arabic", currency:"Syrian Pound (SYP)", attractions:"Damascus Old City (Umayyad Mosque), Krak des Chevaliers Crusader Castle, Palmyra ruins, Aleppo Old City", food:"Kibbeh, Hummus, Fattouche, Muhamara, Baklava, Maamoul, Shawarma", tags:["Damascus — world's oldest continuously inhabited city","Ancient Silk Road city of Aleppo"] },
+  { flag:"🇱🇧", name:"Lebanon", capital:"Beirut", region:"Middle East", language:"Arabic", currency:"Lebanese Pound (LBP)", attractions:"Jeita Grotto, Byblos ancient city, Baalbek Roman temples, Beirut waterfront, Qadisha Valley", food:"Mezze platter, Kibbeh, Kafta, Tabbouleh, Hummus, Fattoush, Labneh, Baklava", tags:["Paris of the Middle East","Most diverse cuisine in Arab world"] },
+  { flag:"🇾🇪", name:"Yemen", capital:"Sana'a", region:"Middle East", language:"Arabic", currency:"Yemeni Rial (YER)", attractions:"Old City of Sana'a (UNESCO), Shibam skyscraper city, Socotra Island (Galápagos of Indian Ocean), Wadi Hadramawt", food:"Saltah, Bint al-Sahn (honey pastry), Aseed, Zurbian, Mandi, Lahoh (flatbread)", tags:["Sana'a — world's highest ancient city","Socotra island — alien-like landscape"] },
+  { flag:"🇴🇲", name:"Oman", capital:"Muscat", region:"Middle East", language:"Arabic", currency:"Omani Rial (OMR)", attractions:"Sultan Qaboos Grand Mosque, Wahiba Sands desert, Wadi Shab, Nizwa Fort, Mutrah Souq, Jebel Akhdar", food:"Shuwa (slow-roasted lamb), Harees, Muhallabia, Majboos, Halwa Omani", tags:["Arabian authentic experience","Frankincense heritage"] },
+  { flag:"🇶🇦", name:"Qatar", capital:"Doha", region:"Middle East", language:"Arabic", currency:"Qatari Riyal (QAR)", attractions:"Museum of Islamic Art, The Pearl-Qatar, Souq Waqif, Katara Cultural Village, Al Zubarah fortress, Inland Sea", food:"Machboos, Harees, Balaleet, Umm Ali, Jareesh, Salona", tags:["FIFA World Cup 2022 host","Highest income per capita"] },
+  { flag:"🇧🇭", name:"Bahrain", capital:"Manama", region:"Middle East", language:"Arabic", currency:"Bahraini Dinar (BHD)", attractions:"Qal'at al-Bahrain (UNESCO), Tree of Life (400-year-old tree), Bahrain National Museum, Al-Fateh Grand Mosque, Manama Souq", food:"Machboos, Muhammar (sweet rice), Balaleet, Harees, Bahraini fish curry", tags:["First Gulf state to strike oil","Formula 1 Bahrain Grand Prix"] },
+  { flag:"🇰🇼", name:"Kuwait", capital:"Kuwait City", region:"Middle East", language:"Arabic", currency:"Kuwaiti Dinar (KWD)", attractions:"Kuwait Towers, Grand Mosque, Failaka Island, Mirror House, Souq Al-Mubarakiya, Liberation Tower", food:"Machboos, Jireesh, Murabyan, Gabout, Lukaimat, Harees", tags:["One of world's richest currencies","Oil-rich Gulf state"] },
+
+  // AMERICAS (35)
+  { flag:"🇺🇸", name:"United States", capital:"Washington D.C.", region:"Americas", language:"English", currency:"US Dollar (USD)", attractions:"Grand Canyon, Statue of Liberty, Yellowstone, Times Square, Hollywood, Golden Gate Bridge, Disney World, Niagara Falls", food:"Hamburger, Hot Dog, BBQ Ribs, Apple Pie, Clam Chowder, Lobster Roll, Buffalo Wings, Cheesecake", tags:["World's largest economy","Hollywood & pop culture capital"] },
+  { flag:"🇨🇦", name:"Canada", capital:"Ottawa", region:"Americas", language:"English, French", currency:"Canadian Dollar (CAD)", attractions:"Niagara Falls, Banff National Park, CN Tower Toronto, Old Quebec City, Vancouver Stanley Park, Northern Lights Yukon", food:"Poutine, Maple Syrup pancakes, Montreal Bagels, Butter Tarts, Nanaimo Bars, BeaverTails", tags:["World's 2nd largest country","Northern Lights & Rocky Mountains"] },
+  { flag:"🇲🇽", name:"Mexico", capital:"Mexico City", region:"Americas", language:"Spanish", currency:"Mexican Peso (MXN)", attractions:"Chichen Itza, Teotihuacan, Tulum ruins, Copper Canyon, Mexico City historic center, Oaxaca, Cenotes", food:"Tacos, Tamales, Mole, Guacamole, Enchiladas, Pozole, Chiles en Nogada, Churros", tags:["Aztec & Mayan civilizations","Mariachi music & Día de Muertos"] },
+  { flag:"🇧🇷", name:"Brazil", capital:"Brasília", region:"Americas", language:"Portuguese", currency:"Brazilian Real (BRL)", attractions:"Christ the Redeemer, Iguazu Falls, Amazon Rainforest, Carnival Rio de Janeiro, Copacabana Beach, Pantanal", food:"Feijoada (black bean stew), Churrasco, Pão de Queijo, Brigadeiro, Acarajé, Açaí, Pastel", tags:["Amazon — world's largest rainforest","Carnival — world's biggest party"] },
+  { flag:"🇦🇷", name:"Argentina", capital:"Buenos Aires", region:"Americas", language:"Spanish", currency:"Argentine Peso (ARS)", attractions:"Buenos Aires city (San Telmo, La Boca), Iguazu Falls, Patagonia (Torres del Paine), Mendoza wine country, Perito Moreno Glacier", food:"Asado (BBQ), Empanadas, Chimichurri, Dulce de Leche, Alfajores, Medialunas, Mate drink", tags:["Tango birthplace","Messi's homeland — football passion"] },
+  { flag:"🇨🇱", name:"Chile", capital:"Santiago", region:"Americas", language:"Spanish", currency:"Chilean Peso (CLP)", attractions:"Easter Island (Rapa Nui), Torres del Paine, Atacama Desert, Marble Caves, Valparaíso colorful port", food:"Completo (hot dog), Cazuela, Empanadas de Pino, Chorrillana, Pastel de Choclo, Sopaipillas", tags:["World's longest country","Easter Island — Moai statues"] },
+  { flag:"🇵🇪", name:"Peru", capital:"Lima", region:"Americas", language:"Spanish, Quechua, Aymara", currency:"Sol (PEN)", attractions:"Machu Picchu, Colca Canyon, Lake Titicaca, Nazca Lines, Huascarán National Park, Lima historic center", food:"Ceviche, Lomo Saltado, Anticuchos, Ají de Gallina, Pisco Sour, Causa Rellena, Rocoto Relleno", tags:["Machu Picchu — Incan citadel","World-class gastronomy capital"] },
+  { flag:"🇨🇴", name:"Colombia", capital:"Bogotá", region:"Americas", language:"Spanish", currency:"Colombian Peso (COP)", attractions:"Cartagena old city, Ciudad Perdida, Coffee Region (Eje Cafetero), San Agustín statues, Caño Cristales river", food:"Bandeja Paisa, Ajiaco, Sancocho, Empanadas, Arepa, Buñuelo, Changua", tags:["World's best coffee (Café de Colombia)","Gabriel García Márquez homeland"] },
+  { flag:"🇻🇪", name:"Venezuela", capital:"Caracas", region:"Americas", language:"Spanish", currency:"Bolívar (VES)", attractions:"Angel Falls (world's highest waterfall), Canaima National Park, Los Roques Archipelago, Morrocoy National Park", food:"Pabellón Criollo, Arepas, Hallacas, Cachapas, Tequeños, Mandocas", tags:["Angel Falls — world's highest waterfall","Oil-rich Orinoco Delta"] },
+  { flag:"🇧🇴", name:"Bolivia", capital:"Sucre (constitutional) / La Paz (seat of government)", region:"Americas", language:"Spanish, Quechua, Aymara", currency:"Boliviano (BOB)", attractions:"Salar de Uyuni (world's largest salt flat), Lake Titicaca, Death Road, Tiwanaku ruins, Amazon Basin", food:"Salteña, Tucumana, Fricasé, Chairo, Api Morado drink, Singani brandy", tags:["Salar de Uyuni — world's largest salt flat","Highest capital city in the world — La Paz"] },
+  { flag:"🇪🇨", name:"Ecuador", capital:"Quito", region:"Americas", language:"Spanish", currency:"US Dollar (USD)", attractions:"Galápagos Islands, Quito historic center (UNESCO), Cotopaxi volcano, Amazon rainforest, Mindo cloud forest", food:"Ceviche, Seco de Pollo, Encebollado, Llapingachos, Fanesca (Easter soup), Cuy (guinea pig)", tags:["Galápagos Islands — evolution's laboratory","Straddles the Equator"] },
+  { flag:"🇵🇾", name:"Paraguay", capital:"Asunción", region:"Americas", language:"Spanish, Guaraní", currency:"Guaraní (PYG)", attractions:"Jesuit Missions (Trinidad), Itaipú Dam, Pantanal del Paraguay, Chaco wilderness, Asunción old city", food:"Sopa Paraguaya, Chipa, Mbejú, Bori-Bori, Asado, Terere drink (cold mate)", tags:["Bilingual nation (Spanish & Guaraní)","Itaipú Dam — largest hydroelectric plant"] },
+  { flag:"🇺🇾", name:"Uruguay", capital:"Montevideo", region:"Americas", language:"Spanish", currency:"Uruguayan Peso (UYU)", attractions:"Colonia del Sacramento (UNESCO), Punta del Este beach resort, Montevideo Old City, Casapueblo art museum", food:"Chivito (steak sandwich), Asado, Empanadas, Dulce de Leche, Alfajores, Mate", tags:["Most progressive country in South America","Gaucho culture"] },
+  { flag:"🇬🇾", name:"Guyana", capital:"Georgetown", region:"Americas", language:"English", currency:"Guyanese Dollar (GYD)", attractions:"Kaieteur Falls (one of world's most powerful), Iwokrama Rainforest, Rupununi savannahs, Georgetown historic buildings", food:"Cook-up Rice, Pepperpot, Metemgee, Garlic Pork, Roti & Curry, Black Cake", tags:["Only English-speaking country in South America","Kaieteur Falls — powerful single-drop waterfall"] },
+  { flag:"🇸🇷", name:"Suriname", capital:"Paramaribo", region:"Americas", language:"Dutch", currency:"Surinamese Dollar (SRD)", attractions:"Paramaribo historic city (UNESCO), Central Suriname Nature Reserve, Brownsberg Nature Park, Commewijne River", food:"Pom, Moksi Alesi, Roti & Masala, Peanut Soup, Saoto soup, Bara", tags:["Only Dutch-speaking country in South America","Largest unspoiled rainforest area"] },
+  { flag:"🇨🇷", name:"Costa Rica", capital:"San José", region:"Americas", language:"Spanish", currency:"Costa Rican Colón (CRC)", attractions:"Arenal Volcano, Manuel Antonio National Park, Monteverde Cloud Forest, Tortuguero turtles, Poás Volcano", food:"Gallo Pinto, Casado, Olla de Carne, Chifrijo, Arroz con Leche, Churchill (shaved ice)", tags:["Abolished its army in 1948","Pura Vida — way of life"] },
+  { flag:"🇵🇦", name:"Panama", capital:"Panama City", region:"Americas", language:"Spanish", currency:"Balboa / US Dollar", attractions:"Panama Canal, San Blas Islands, Bocas del Toro, Casco Viejo, Darien National Park", food:"Sancocho, Arroz con Pollo, Ceviche, Ropa Vieja, Hojaldras, Carimañolas", tags:["Panama Canal — engineering marvel","Bridge between two continents"] },
+  { flag:"🇳🇮", name:"Nicaragua", capital:"Managua", region:"Americas", language:"Spanish", currency:"Córdoba (NIO)", attractions:"Granada colonial city, Lake Nicaragua (with islands), Ometepe Island (twin volcanoes), León colonial city, Corn Islands", food:"Gallo Pinto, Vigorón, Indio Viejo, Nacatamal, Quesillo, Pinolillo drink", tags:["Land of Lakes and Volcanoes","Deepest lake in Central America — Lake Nicaragua"] },
+  { flag:"🇭🇳", name:"Honduras", capital:"Tegucigalpa", region:"Americas", language:"Spanish", currency:"Lempira (HNL)", attractions:"Copán Mayan ruins, Bay Islands (diving), La Tigra National Park, Roatán Island, Gracias old town", food:"Baleadas, Sopa de Caracol, Tapado, Plato Típico, Arroz con Leche, Horchata", tags:["Copán — Maya astronomy site","Caribbean Bay Islands diving"] },
+  { flag:"🇬🇹", name:"Guatemala", capital:"Guatemala City", region:"Americas", language:"Spanish", currency:"Quetzal (GTQ)", attractions:"Tikal Mayan ruins, Lake Atitlán, Antigua colonial city, Pacaya Volcano, Chichicastenango market", food:"Pepián, Jocon, Kak'ik, Tamales, Chuchitos, Rellenitos, Atol de Elote", tags:["Heart of the Mayan world","Antigua — Spanish colonial gem"] },
+  { flag:"🇸🇻", name:"El Salvador", capital:"San Salvador", region:"Americas", language:"Spanish", currency:"US Dollar (USD)", attractions:"Joya de Cerén (Pompeii of Americas), Santa Ana Volcano, El Tunco surf beach, Suchitoto colonial town, Cerro Verde", food:"Pupusas, Yuca Frita, Sopa de Pata, Pan con Pavo, Curtido, Quesadilla Salvadoreña", tags:["Pupusas — national dish","El Salvador surf culture"] },
+  { flag:"🇧🇿", name:"Belize", capital:"Belmopan", region:"Americas", language:"English", currency:"Belize Dollar (BZD)", attractions:"Great Blue Hole, Belize Barrier Reef (UNESCO), Tikal Day Trips, Caracol Maya ruins, Caye Caulker island", food:"Rice & Beans, Stew Chicken, Garnaches, Hudut, Fry Jack, Johnny Cakes, Boil Up", tags:["Great Blue Hole — world-famous dive site","English-speaking Central America"] },
+  { flag:"🇨🇺", name:"Cuba", capital:"Havana", region:"Caribbean", language:"Spanish", currency:"Cuban Peso (CUP)", attractions:"Havana old city (vintage cars & architecture), Viñales Valley, Varadero beach, Trinidad colonial city, Che Guevara Mausoleum", food:"Ropa Vieja, Moros y Cristianos, Lechón, Tostones, Cuban Sandwich, Mojito, Daiquiri", tags:["Classic cars & revolution history","Cigars & salsa music"] },
+  { flag:"🇯🇲", name:"Jamaica", capital:"Kingston", region:"Caribbean", language:"English", currency:"Jamaican Dollar (JMD)", attractions:"Dunn's River Falls, Blue Mountains, Negril Seven Mile Beach, Bob Marley Museum, YS Falls", food:"Jerk Chicken, Ackee & Saltfish, Rice & Peas, Curry Goat, Patties, Festival, Blue Mountain Coffee", tags:["Birthplace of reggae & Bob Marley","Usain Bolt's homeland"] },
+  { flag:"🇭🇹", name:"Haiti", capital:"Port-au-Prince", region:"Caribbean", language:"French, Haitian Creole", currency:"Haitian Gourde (HTG)", attractions:"Citadelle Laferrière (UNESCO fortress), Sans-Souci Palace, Labadee beach, Jacmel art town", food:"Griot (fried pork), Diri ak djon djon (black mushroom rice), Pikliz, Soup Joumou, Fritay", tags:["First Black republic in the world","Vodou cultural heritage"] },
+  { flag:"🇩🇴", name:"Dominican Republic", capital:"Santo Domingo", region:"Caribbean", language:"Spanish", currency:"Dominican Peso (DOP)", attractions:"Zona Colonial Santo Domingo (first European city in Americas), Samaná Peninsula, Punta Cana beaches, Los Haitises National Park", food:"La Bandera (rice, beans & meat), Mangu, Sancocho, Tostones, Chicharrón, Mamajuana", tags:["First European settlement in Americas","Punta Cana resort destination"] },
+  { flag:"🇵🇷", name:"Puerto Rico", capital:"San Juan", region:"Caribbean", language:"Spanish, English", currency:"US Dollar (USD)", attractions:"Old San Juan (El Morro fortress), El Yunque rainforest, Bioluminescent bays, Culebra Island, La Fortaleza", food:"Mofongo, Arroz con Gandules, Pernil, Pasteles, Tostones, Lechón, Piña Colada", tags:["US territory since 1898","Only bioluminescent bays in the world"] },
+  { flag:"🇹🇹", name:"Trinidad and Tobago", capital:"Port of Spain", region:"Caribbean", language:"English", currency:"Trinidad and Tobago Dollar (TTD)", attractions:"Maracas Beach, Asa Wright Nature Centre (birdwatching), Nylon Pool (Tobago), Pitch Lake, Carnival", food:"Doubles, Roti & Curry, Bake & Shark, Pelau, Callaloo, Sorrel drink", tags:["Carnival — Caribbean's biggest festival","Birthplace of steelpan & calypso"] },
+  { flag:"🇧🇧", name:"Barbados", capital:"Bridgetown", region:"Caribbean", language:"English", currency:"Barbadian Dollar (BBD)", attractions:"Bridgetown & Garrison (UNESCO), Harrison's Cave, Crane Beach, Animal Flower Cave, Bathsheba surf beach", food:"Flying Fish & Cou-cou (national dish), Pudding & Souse, Macaroni Pie, Bajan Black Cake, Banks Beer, Rum Punch", tags:["Rum birthplace","Rihanna's birthplace"] },
+  { flag:"🇬🇩", name:"Grenada", capital:"St. George's", region:"Caribbean", language:"English", currency:"East Caribbean Dollar (XCD)", attractions:"Grand Anse Beach, Underwater Sculpture Park, Belmont Estate, Grand Etang National Park, Concord Falls", food:"Oil Down (national dish), Callaloo Soup, Roti, Grenadian Lambi, Rum Punch, Cocoa Tea", tags:["Isle of Spice","World's first underwater sculpture park"] },
+  { flag:"🇱🇨", name:"Saint Lucia", capital:"Castries", region:"Caribbean", language:"English", currency:"East Caribbean Dollar (XCD)", attractions:"The Pitons (twin volcanic peaks, UNESCO), Sulphur Springs, Marigot Bay, Diamond Botanical Gardens, Reduit Beach", food:"Green Fig & Salt Fish, Callaloo, Bouyon, Accra, La Kwi (fish broth), Rum Punch", tags:["The Pitons — twin volcanic peaks","Most Nobel Laureates per capita"] },
+
+  // OCEANIA (14)
+  { flag:"🇦🇺", name:"Australia", capital:"Canberra", region:"Oceania", language:"English", currency:"Australian Dollar (AUD)", attractions:"Sydney Opera House, Great Barrier Reef, Uluru (Ayers Rock), Daintree Rainforest, Great Ocean Road, Kakadu National Park", food:"Vegemite toast, Tim Tams, Meat Pies, Lamingtons, Barramundi, Pavlova, Flat White coffee", tags:["World's largest coral reef — Great Barrier Reef","Home of kangaroos & koalas"] },
+  { flag:"🇳🇿", name:"New Zealand", capital:"Wellington", region:"Oceania", language:"English, Māori", currency:"New Zealand Dollar (NZD)", attractions:"Fiordland National Park (Milford Sound), Hobbiton, Rotorua geothermal, Bay of Islands, Tongariro Alpine Crossing", food:"Hangi (Māori earth oven), Pavlova, Lamb roast, Fish & Chips, Lamingtons, Flat White, Feijoas", tags:["Lord of the Rings filming location","Māori indigenous culture"] },
+  { flag:"🇵🇬", name:"Papua New Guinea", capital:"Port Moresby", region:"Oceania", language:"English, Tok Pisin, Hiri Motu", currency:"Kina (PGK)", attractions:"Kokoda Track, Sepik River tribes, Mount Wilhelm, Tufi fjords, Goroka Show (Highland Festival)", food:"Mumu (earth oven feast), Taro, Sago, Roasted pork, Coconut crab, Kaukau (sweet potato)", tags:["Most linguistically diverse country","800+ languages spoken"] },
+  { flag:"🇫🇯", name:"Fiji", capital:"Suva", region:"Oceania", language:"English, Fijian, Hindi", currency:"Fijian Dollar (FJD)", attractions:"Mamanuca Islands, Yasawa Islands, Coral Coast diving, Taveuni (Rainbow Reef), Navala village", food:"Kokoda (raw fish in coconut milk), Lovo (earth oven), Cassava cake, Rourou (taro leaves), Kava ceremony drink", tags:["Happiest people on Earth","South Pacific paradise islands"] },
+  { flag:"🇸🇧", name:"Solomon Islands", capital:"Honiara", region:"Oceania", language:"English", currency:"Solomon Islands Dollar (SBD)", attractions:"WWII Battle of Guadalcanal sites, Marovo Lagoon, Skull Island, Blue Lagoon, traditional villages", food:"Poi, Sago, Bonito fish (skipjack), Taro, Ngali nuts, Fresh coconut", tags:["WWII Pacific theater history","Marovo Lagoon — world's largest saltwater lagoon"] },
+  { flag:"🇻🇺", name:"Vanuatu", capital:"Port Vila", region:"Oceania", language:"Bislama, English, French", currency:"Vanuatu Vatu (VUV)", attractions:"Mount Yasur active volcano (Tanna), Champagne Beach, Blue Holes, Mele Cascades, Millennium Cave", food:"Lap lap (national dish), Tuluk, Nalot, Fresh fish, Kava ceremony, Island cabbage", tags:["Land Diving ritual — bungee predecessor","Most active volcano tourism"] },
+  { flag:"🇸🇲", name:"Samoa", capital:"Apia", region:"Oceania", language:"Samoan, English", currency:"Samoan Tālā (WST)", attractions:"To Sua Ocean Trench, Robert Louis Stevenson's home, Lalomanu beach, Cape Mulinu'u, Papapapaitai Falls", food:"Oka (raw fish), Palusami, Sapasui, Umu (earth oven), Chop Suey Samoan style, Koko Samoa", tags:["Fa'a Samoa — traditional way of life","Rugby powerhouse"] },
+  { flag:"🇹🇴", name:"Tonga", capital:"Nukuʻalofa", region:"Oceania", language:"Tongan, English", currency:"Tongan Paʻanga (TOP)", attractions:"Ha'amonga 'a Maui Trilithon, Mapu'a 'a Vaea Blowholes, Swimmable humpback whales, Vava'u islands, Royal Palace", food:"Lu Pulu (corned beef in taro), Ota Ika (raw fish), Feke (octopus), Fekika (pawpaw), Kava", tags:["Only remaining Polynesian monarchy","Swim with humpback whales"] },
+  { flag:"🇰🇮", name:"Kiribati", capital:"South Tarawa", region:"Oceania", language:"English, Gilbertese", currency:"Australian Dollar (AUD)", attractions:"Tarawa WWII Battlefield, Phoenix Islands Protected Area (world's largest marine park), Abemama, Line Islands", food:"Tebwere (fish soup), Babai (taro), Te Karewe, Coconut crab, Toddy (coconut palm drink)", tags:["First country to experience New Year","At risk of disappearing due to rising seas"] },
+  { flag:"🇲🇭", name:"Marshall Islands", capital:"Majuro", region:"Oceania", language:"Marshallese, English", currency:"US Dollar (USD)", attractions:"Bikini Atoll (nuclear test site UNESCO), Majuro lagoon, WWII wrecks, Arno Atoll, traditional canoe sailing", food:"Dri-Marshallese food — Pandanus fruit, Breadfruit, Coconut, Fish (Tuna), Rice, Wut (coconut candy)", tags:["Bikini Atoll nuclear test history","Traditional stick chart navigation"] },
+  { flag:"🇫🇲", name:"Micronesia", capital:"Palikir", region:"Oceania", language:"English", currency:"US Dollar (USD)", attractions:"Nan Madol ancient ruins, WWII Truk Lagoon (underwater graveyard), Kosrae coral reefs, Pohnpei island", food:"Breadfruit, Taro, Yam, Fresh fish, Sakau (kava), Coconut-based dishes", tags:["Nan Madol — Venice of the Pacific","WWII Truk Lagoon wreck diving"] },
+  { flag:"🇵🇼", name:"Palau", capital:"Ngerulmud", region:"Oceania", language:"Palauan, English", currency:"US Dollar (USD)", attractions:"Rock Islands Southern Lagoon (UNESCO), Jellyfish Lake (non-stinging), Blue Corner dive, Milky Way lagoon", food:"Taro (cassava), Bat Soup, Fresh lagoon fish, Coconut crab, Buuch (betel nut)", tags:["Rock Islands — world's best diving","Jellyfish Lake — unique ecosystem"] },
+  { flag:"🇳🇷", name:"Nauru", capital:"Yaren (unofficial)", region:"Oceania", language:"Nauruan, English", currency:"Australian Dollar (AUD)", attractions:"Buada Lagoon, Command Ridge, Anibare Bay, Japanese WWII relics, Menen Hotel", food:"Coconut crab, Flying fish, Tuna, Breadfruit, Tropical fruits, Nauruan pork dishes", tags:["World's smallest island nation","Former wealthiest per-capita country (phosphate)"] },
+  { flag:"🇹🇻", name:"Tuvalu", capital:"Funafuti", region:"Oceania", language:"Tuvaluan, English", currency:"Tuvaluan Dollar / Australian Dollar", attractions:"Funafuti Conservation Area, Funafuti Atoll, Te Namo Lagoon, traditional fatele dance", food:"Pulaka (swamp taro), Coconut, Fish (Tuna & Bonito), Breadfruit, Palusami", tags:["World's 4th smallest country","Most threatened by rising sea levels"] },
+
+  // More Africa
+  { flag:"🇸🇸", name:"South Sudan", capital:"Juba", region:"Africa", language:"English", currency:"South Sudanese Pound (SSP)", attractions:"Sudd wetlands, Boma National Park, Nimule National Park, Juba waterfront, Nile River confluence", food:"Asida (thick porridge), Ful (fava beans), Kisra (flatbread), Grilled meat, Aseeda", tags:["World's newest country (2011)","Nile River nation"] },
+  { flag:"🇨🇫", name:"Central African Republic", capital:"Bangui", region:"Africa", language:"French, Sango", currency:"Central African CFA Franc (XAF)", attractions:"Dzanga-Sangha Special Reserve (forest elephants & gorillas), Manovo-Gounda St Floris Park, Bangui rapids", food:"Gozo (cassava bread), Moamba ya Nkoso, Poulet DG, Ntaba, Kanda", tags:["Forest elephant & gorilla habitat","Dzanga-Sangha — pristine jungle"] },
+  { flag:"🇹🇩", name:"Chad", capital:"N'Djamena", region:"Africa", language:"French, Arabic", currency:"Central African CFA Franc (XAF)", attractions:"Zakouma National Park, Tibesti Mountains, Lake Chad, Ennedi Plateau rock art, N'Djamena Grand Mosque", food:"Daraba (okra stew), La Bouillie, Jarret de Boeuf, Salanga (dried fish), Tibiko", tags:["Lake Chad — shrinking wonder","Ennedi Plateau UNESCO rock art"] },
+  { flag:"🇪🇷", name:"Eritrea", capital:"Asmara", region:"Africa", language:"Tigrinya, Arabic, English", currency:"Eritrean Nakfa (ERN)", attractions:"Asmara Art Deco architecture (UNESCO), Massawa port city, Dahlak Archipelago, Qohaito archaeological site", food:"Injera with Zigni, Tsebhi, Shahan Ful, Himbasha bread, Suwa (sorghum beer)", tags:["Asmara — Italian Art Deco capital","Red Sea diving at Dahlak Archipelago"] },
+  { flag:"🇩🇯", name:"Djibouti", capital:"Djibouti City", region:"Africa", language:"French, Arabic", currency:"Djiboutian Franc (DJF)", attractions:"Lake Assal (lowest point in Africa), Day Forest National Park, Gulf of Tadjoura, Lac Abbé flamingos", food:"Skoudehkaris (rice and lamb), Laxoox, Maraq (meat soup), Anjeero, Fah-fah", tags:["Lowest point in Africa — Lake Assal","Strategic Horn of Africa port"] },
+  { flag:"🇰🇲", name:"Comoros", capital:"Moroni", region:"Africa", language:"Comorian, French, Arabic", currency:"Comorian Franc (KMF)", attractions:"Mount Karthala active volcano, Mohéli Marine Park, Iconi ruins, Domoni medieval town, coral reefs", food:"Langouste à la vanille (lobster with vanilla), Mkatra foutra, Pilau, Wali wa Nazi (coconut rice)", tags:["Ylang-ylang perfume capital","Coelacanth fish discovered here"] },
+  { flag:"🇸🇹", name:"São Tomé and Príncipe", capital:"São Tomé", region:"Africa", language:"Portuguese", currency:"Dobra (STN)", attractions:"Obo National Park, Pico de São Tomé, colonial architecture, Roça plantations, Turtle nesting beaches", food:"Calulu de peixe, Banana-pão (breadfruit), Kizaca, Cachupa, Fresh seafood", tags:["First European plantation colony in Africa","Pristine island biodiversity"] },
+  { flag:"🇬🇼", name:"Guinea-Bissau", capital:"Bissau", region:"Africa", language:"Portuguese", currency:"West African CFA Franc (XOF)", attractions:"Bijagós Archipelago (UNESCO biosphere), Orango Island hippos in saltwater, Varela beach, Cantanhez Forest", food:"Caldo de mancarra (peanut soup), Fish & rice, Arroz djagati, Benachin, Caril", tags:["Bijagós — semi-nomadic archipelago","Saltwater hippos of Orango"] },
+  { flag:"🇬🇶", name:"Equatorial Guinea", capital:"Malabo", region:"Africa", language:"Spanish, French, Portuguese", currency:"Central African CFA Franc (XAF)", attractions:"Pico Basile volcano, Monte Alén National Park, Malabo old colonial town, Bioko Island beaches", food:"Sopa de pescado, Afoam, Pepper soup, Fufu, Greens stew, Grilled fish", tags:["Only Spanish-speaking country in Africa","Oil-rich Central African state"] },
+  { flag:"🇲🇼", name:"Malawi", capital:"Lilongwe", region:"Africa", language:"English, Chichewa", currency:"Malawian Kwacha (MWK)", attractions:"Lake Malawi (inland sea), Liwonde National Park, Nyika Plateau, Mulanje Massif, Zomba Plateau", food:"Nsima (maize porridge), Chambo fish, Ndiwo, Kondowole, Bonya (dried fish)", tags:["Warm Heart of Africa","Lake Malawi — freshwater snorkeling"] },
+  { flag:"🇱🇸", name:"Lesotho", capital:"Maseru", region:"Africa", language:"Sesotho, English", currency:"Lesotho Loti (LSL)", attractions:"Sani Pass, Maletsunyane Falls, Katse Dam, Thaba Bosiu fortress, Maluti Mountains pony trekking", food:"Pap (maize porridge), Moroho (wild spinach), Papa le Nama (meat stew), Joala (sorghum beer)", tags:["Mountain Kingdom surrounded by South Africa","Highest lowest point in the world"] },
+  { flag:"🇸🇿", name:"Eswatini", capital:"Mbabane / Lobamba", region:"Africa", language:"Swati, English", currency:"Lilangeni (SZL)", attractions:"Mlilwane Wildlife Sanctuary, Hlane Royal National Park, Swazi cultural villages, Mantenga Falls, Reed Dance ceremony", food:"Emasi (sour milk), Sishwala, Umphokoqo, Sitfubi (pumpkin porridge), Tinkhobe", tags:["Last absolute monarchy in Africa","Incwala and Umhlanga ceremonies"] },
+  { flag:"🇧🇮", name:"Burundi", capital:"Gitega", region:"Africa", language:"Kirundi, French, English", currency:"Burundian Franc (BIF)", attractions:"Lake Tanganyika, Kibira National Park, Rusizi National Park, Source of the Nile monument, Gitega drum sanctuary", food:"Ugali, Isombe, Matoke, Brochettes, Ubuki (banana wine), Ikivuguto", tags:["Livingstone-Stanley meeting site on Lake Tanganyika","Traditional Ingoma drumming UNESCO"] },
+  { flag:"🇬🇲", name:"Gambia", capital:"Banjul", region:"Africa", language:"English", currency:"Gambian Dalasi (GMD)", attractions:"Kachikally Crocodile Pool, Abuko Nature Reserve, Roots (Kunta Kinte Island), Banjul beaches, River Gambia", food:"Domoda, Benachin (Jollof), Yassa, Plasas, Superkanja, Attaya (tea ceremony)", tags:["Smallest country in mainland Africa","Alex Haley's 'Roots' — Kunta Kinte's homeland"] },
+
+  // More Americas
+  { flag:"🇻🇨", name:"Saint Vincent and the Grenadines", capital:"Kingstown", region:"Caribbean", language:"English", currency:"East Caribbean Dollar (XCD)", attractions:"La Soufrière volcano, Tobago Cays (Grenadines), Wallilabou Bay (Pirates of the Caribbean filming), Falls of Baleine", food:"Roasted breadfruit and jackfish, Callaloo soup, Fried plantains, Roti, Black pudding, Sea moss drink", tags:["Pirates of the Caribbean filming location","Tobago Cays marine park"] },
+  { flag:"🇦🇬", name:"Antigua and Barbuda", capital:"St. John's", region:"Caribbean", language:"English", currency:"East Caribbean Dollar (XCD)", attractions:"365 beaches (one for each day), Nelson's Dockyard (UNESCO), Devil's Bridge, Barbuda's pink sand beach, Shirley Heights", food:"Fungee and Pepperpot (national dish), Ducana, Saltfish, Chop-up, Wadadli beer, Rum punch", tags:["365 beaches — one for every day","English Harbour — historic naval base"] },
+  { flag:"🇩🇲", name:"Dominica", capital:"Roseau", region:"Caribbean", language:"English", currency:"East Caribbean Dollar (XCD)", attractions:"Boiling Lake, Morne Trois Pitons (UNESCO), Trafalgar Falls, Champagne Reef (warm volcanic reef), Kalinago territory", food:"Mountain chicken (frog), Callaloo, Sancocho, Manicou, Breadfruit dishes, Dynamite (rum punch)", tags:["Nature Isle of the Caribbean","Only Caribbean island with Carib Amerindian territory"] },
+  { flag:"🇰🇳", name:"Saint Kitts and Nevis", capital:"Basseterre", region:"Caribbean", language:"English", currency:"East Caribbean Dollar (XCD)", attractions:"Brimstone Hill Fortress (UNESCO), Mount Liamuiga volcano, Nevis Peak, Pinney's Beach, St. Kitts Scenic Railway", food:"Stewed saltfish, Coconut dumplings, Goat water stew, Pelau, Sugar cake, CSR (Cane Spirit Rothschild)", tags:["First English and French colony in Caribbean","Brimstone Hill Fortress UNESCO"] },
+  { flag:"🇦🇼", name:"Aruba", capital:"Oranjestad", region:"Caribbean", language:"Papiamento, Dutch", currency:"Aruban Florin (AWG)", attractions:"Eagle Beach, Natural Pool (Conchi), Arikok National Park, California Lighthouse, Alto Vista Chapel", food:"Keshi Yena (stuffed cheese), Sopi di Mondongo, Pan Bati, Funchi, Fresh seafood, Balashi beer", tags:["One Happy Island","Trade winds — almost no hurricanes"] },
+
+  // More Asia
+  { flag:"🇭🇰", name:"Hong Kong", capital:"Hong Kong", region:"Asia", language:"Cantonese, English", currency:"Hong Kong Dollar (HKD)", attractions:"Victoria Harbour skyline, Victoria Peak, Temple Street Night Market, Lantau Island (Big Buddha), Mong Kok markets", food:"Dim Sum, Roast Goose, Wonton Noodle Soup, Egg Tarts, Pineapple Bun, Milk Tea", tags:["SAR of China","Asia's world city — East meets West"] },
+  { flag:"🇲🇴", name:"Macau", capital:"Macau", region:"Asia", language:"Chinese (Cantonese), Portuguese", currency:"Macanese Pataca (MOP)", attractions:"Historic Centre of Macau (UNESCO), Venetian Macao casino, Ruins of St. Paul's, Cotai Strip, A-Ma Temple", food:"Pastéis de nata, African chicken, Minchi, Pork chop bun, Serradura (sawdust pudding)", tags:["Gaming capital of the world","Portuguese Asian fusion heritage"] },
+  { flag:"🇿🇼", name:"Zimbabwe", capital:"Harare", region:"Africa", language:"16 official languages", currency:"Zimbabwe Gold (ZiG)", attractions:"Victoria Falls, Great Zimbabwe Ruins, Hwange National Park, Matobo Hills, Mana Pools", food:"Sadza, Muriwo unedovi, Nyama, Maheu, Mopane worms", tags:["Great Zimbabwe ruins","Victoria Falls"] },
+  { flag:"🇵🇸", name:"Palestine", capital:"Ramallah (West Bank) / Gaza City", region:"Middle East", language:"Arabic", currency:"Israeli New Shekel / Jordanian Dinar", attractions:"Church of the Nativity (Bethlehem), Al-Aqsa Mosque, Hebron Old City, Jericho (world's oldest city), Dead Sea", food:"Musakhan, Maqluba, Maftoul (Palestinian couscous), Qatayef, Knafeh, Za'atar bread", tags:["Birthplace of Christ — Bethlehem","Jericho — world's oldest continuously inhabited city"] },
+  { flag:"🇾🇪", name:"Western Sahara", capital:"El-Aaiún (disputed)", region:"Africa", language:"Arabic, Spanish", currency:"Moroccan Dirham (MAD)", attractions:"Dakhla lagoon (kitesurfing), Saharan desert landscapes, Coastal fishing, Bedouin culture", food:"Mechoui (roasted lamb), Couscous, Zrig (camel milk drink), Dates, Mint tea", tags:["Disputed territory — Morocco & Polisario Front","World-class kitesurfing at Dakhla"] },
+];
+
+
+let currentRegion = 'All';
+
+function buildCard(c) {
+  return `<div class="card" data-region="${c.region}" data-name="${c.name.toLowerCase()}">
+    <div class="card-header">
+      <div class="flag">${c.flag}</div>
+      <div class="country-title">
+        <h2>${c.name}</h2>
+        <span class="region-tag">${c.region}</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="info-row"><span class="label">🏛 Capital</span><span class="value">${c.capital}</span></div>
+      <div class="info-row"><span class="label">🗣 Language</span><span class="value">${c.language}</span></div>
+      <div class="info-row"><span class="label">💰 Currency</span><span class="value">${c.currency}</span></div>
+      <div class="info-row"><span class="label">🗺 Attractions</span><span class="value">${c.attractions}</span></div>
+      <div class="info-row"><span class="label">🍽 Food</span><span class="value">${c.food}</span></div>
+    </div>
+    <div class="card-footer">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+  </div>`;
+}
+
+function renderAll() {
+  document.getElementById('grid').innerHTML = countries.map(buildCard).join('');
+  updateCount();
+}
+
+function setRegion(region, btn) {
+  currentRegion = region;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCards();
+}
+
+function filterCards() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let visible = 0;
+  document.querySelectorAll('.card').forEach(card => {
+    const name = card.dataset.name;
+    const region = card.dataset.region;
+    const text = card.innerText.toLowerCase();
+    const matchRegion = currentRegion === 'All' || region === currentRegion;
+    const matchSearch = !search || text.includes(search);
+    if (matchRegion && matchSearch) {
+      card.classList.remove('hidden');
+      visible++;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+  document.getElementById('visibleCount').textContent = visible;
+}
+
+function updateCount() {
+  document.getElementById('visibleCount').textContent = countries.length;
+}
+
+renderAll();
+</script>
+</body>
+</html>
